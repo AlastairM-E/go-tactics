@@ -13,6 +13,7 @@ require("dotenv").config({
 });
 var app = (0, express_1["default"])();
 var upload = (0, multer_1["default"])();
+var port = process.env.PORT || process.env.SITE_PORT;
 var translateMoveToCoordinate = function (move, boardSize) {
     var SINGLE_CHARACTER = 0;
     var DIFFERENCE_WITH_I_CHAR_REMOVED = 1;
@@ -85,7 +86,7 @@ var translateSgfParsedGoGame = function (goGame) {
     return translatedGoGame;
 };
 app.use((0, cors_1["default"])({
-    origin: "".concat(process.env.REACT_APP_SITE_DOMAIN, ":").concat(process.env.CORS_SITE_PORT)
+    origin: "".concat(process.env.CORS_SITE_DOMAIN)
 }));
 app.use(express_1["default"].static(path_1["default"].join(__dirname, "../build")));
 app.get("/", function (req, res) {
@@ -98,6 +99,6 @@ app.post("/uploadSgf", upload.single("sgf"), function (req, res) {
     var uploadedGoGame = translateSgfParsedGoGame(parsedSgfFile);
     res.json(uploadedGoGame);
 });
-app.listen(process.env.REACT_APP_SITE_PORT, function () {
-    console.log("Hello world, listening on port: ".concat(process.env.REACT_APP_SITE_PORT));
+app.listen(port, function () {
+    console.log("Hello world, listening on port: ".concat(port));
 });

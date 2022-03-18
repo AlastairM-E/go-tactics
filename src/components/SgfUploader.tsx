@@ -30,10 +30,6 @@ const dbName = "goGameStore";
 const storeName = "goGames";
 let goGameDb: undefined | IndexedDBHelper = undefined;
 
-console.log(
-  `${process.env.REACT_APP_SITE_DOMAIN}:${process.env.REACT_APP_SITE_PORT}/uploadSgf`
-);
-
 function SgfUploader({ setupGoBoard, addGoGameToDb }: sgfUploaderProps) {
   const [file, setFile]: [
     userFile,
@@ -50,7 +46,7 @@ function SgfUploader({ setupGoBoard, addGoGameToDb }: sgfUploaderProps) {
       formData.append("sgf", file, file.name);
 
       const uploadedSgfFile = await fetch(
-        `${process.env.REACT_APP_SITE_DOMAIN}:${process.env.REACT_APP_SITE_PORT}/uploadSgf`,
+        `${process.env.REACT_APP_SITE_DOMAIN}/uploadSgf`,
         {
           method: "POST",
           body: formData,

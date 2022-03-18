@@ -21,6 +21,8 @@ type StoneColor = "B" | "W";
 
 const app = express();
 const upload = multer();
+const port = process.env.PORT || process.env.SITE_PORT;
+
 const translateMoveToCoordinate = (move: string, boardSize: number) => {
   const SINGLE_CHARACTER = 0;
   const DIFFERENCE_WITH_I_CHAR_REMOVED = 1;
@@ -121,7 +123,7 @@ const translateSgfParsedGoGame = (
 
 app.use(
   cors({
-    origin: `${process.env.REACT_APP_SITE_DOMAIN}:${process.env.CORS_SITE_PORT}`,
+    origin: `${process.env.CORS_SITE_DOMAIN}`,
   })
 );
 
@@ -138,8 +140,6 @@ app.post("/uploadSgf", upload.single("sgf"), (req, res) => {
   res.json(uploadedGoGame);
 });
 
-app.listen(process.env.REACT_APP_SITE_PORT, () => {
-  console.log(
-    `Hello world, listening on port: ${process.env.REACT_APP_SITE_PORT}`
-  );
+app.listen(port, () => {
+  console.log(`Hello world, listening on port: ${port}`);
 });

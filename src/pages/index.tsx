@@ -1,4 +1,4 @@
-import { Goban } from "../lib/shudan/src/main.js";
+import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
 import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";
 import React, { useState } from "react";

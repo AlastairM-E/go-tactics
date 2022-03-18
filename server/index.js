@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 exports.__esModule = true;
 var express_1 = __importDefault(require("express"));
 var multer_1 = __importDefault(require("multer"));
-var main_js_1 = __importDefault(require("../src/lib/sgf/src/main.js"));
+var main_js_1 = __importDefault(require("../lib/sgf/src/main.js"));
 var path_1 = __importDefault(require("path"));
 var cors_1 = __importDefault(require("cors"));
 require("dotenv").config({

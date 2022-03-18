@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import sgf from "../src/lib/sgf/src/main.js";
+import sgf from "../lib/sgf/src/main.js";
 import { GoGameInterface, GoMove } from "../src/main.js";
 import path from "path";
 import cors from "cors";

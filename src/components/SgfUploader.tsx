@@ -30,6 +30,8 @@ const dbName = "goGameStore";
 const storeName = "goGames";
 let goGameDb: undefined | IndexedDBHelper = undefined;
 
+console.log(`${process.env.REACT_APP_SITE_DOMAIN}/uploadSgf`);
+
 function SgfUploader({ setupGoBoard, addGoGameToDb }: sgfUploaderProps) {
   const [file, setFile]: [
     userFile,

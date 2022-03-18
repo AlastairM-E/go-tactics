@@ -52,7 +52,8 @@
     "serve": "tsc --esModuleInterop  ./server/index.ts && node ./server/index.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": " react-scripts start",
+    "dev": "react-scripts start",
+    "deploy": "heroku git:remote -a go-tactics",
     "cy:open": "./node_modules/.bin/cypress open"
   },
   "eslintConfig": {

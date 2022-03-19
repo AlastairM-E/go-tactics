@@ -1,7 +1,7 @@
+import React, { useState } from "react";
 import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
 import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";
-import React, { useState } from "react";
 import {
   Container,
   HStack,
@@ -12,9 +12,9 @@ import {
 import { GoGameInterface, GoMove } from "../main";
 import GameErrorMessage from "../components/GameErrorMessage";
 import moveSound from "../audio/placeStone.mp3";
-import GameFileExplorer from "../components/SgfUploader";
+import GameFileExplorer from "../components/GameFileExplorer";
 import { createGoBoard, moveOptions } from "../helper";
-import MoveBar from "../components/MoveBar";
+import AnalysisControls from "../components/AnalysisControls";
 
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
@@ -22,13 +22,6 @@ const BOARD_SIZE = 9;
 const initGoBoard: SignMap = createGoBoard(BOARD_SIZE);
 const userPlayer = BLACK_STONE;
 const FIRST_MOVE = 0;
-const setupBackend = async () => {
-  try {
-    // await fetch("/api/initServices");
-  } catch ($error: any) {
-    throw new Error($error);
-  }
-};
 const newGoGame: GoGameInterface = {
   id: "randomGame",
   gameName: "[Default Game]",
@@ -39,8 +32,6 @@ const newGoGame: GoGameInterface = {
   boardXSize: BOARD_SIZE,
   boardYSize: BOARD_SIZE,
 };
-
-setupBackend();
 
 function IndexPage() {
   const [goBoard, setGoBoard] = useState(new Board(initGoBoard));
@@ -96,7 +87,7 @@ function IndexPage() {
     <ChakraProvider>
       <audio id="moveSound" src={moveSound} />
       <HStack spacing={1} margin={4}>
-        <MoveBar
+        <AnalysisControls
           goMoves={goGame.moves}
           playBoardPosition={playBoardPosition}
           currentMoveState={[currentMove, setCurrentMove]}
@@ -115,7 +106,7 @@ function IndexPage() {
             showCoordinates
           />
           <Divider />
-        </MoveBar>
+        </AnalysisControls>
         <Container>
           <GameFileExplorer
             setupGoBoard={setupGoBoard}

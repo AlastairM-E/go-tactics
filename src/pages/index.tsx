@@ -1,20 +1,22 @@
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
 import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";
-import React, { useState } from "react";
 import {
   Container,
-  HStack,
   Divider,
   Text,
   ChakraProvider,
+  Center,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { GoGameInterface, GoMove } from "../main";
 import GameErrorMessage from "../components/GameErrorMessage";
 import moveSound from "../audio/placeStone.mp3";
-import GameFileExplorer from "../components/SgfUploader";
+import GameFileExplorer from "../components/GameFileExplorer";
 import { createGoBoard, moveOptions } from "../helper";
-import MoveBar from "../components/MoveBar";
+import AnalysisControls from "../components/AnalysisControls";
 
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
@@ -22,13 +24,6 @@ const BOARD_SIZE = 9;
 const initGoBoard: SignMap = createGoBoard(BOARD_SIZE);
 const userPlayer = BLACK_STONE;
 const FIRST_MOVE = 0;
-const setupBackend = async () => {
-  try {
-    // await fetch("/api/initServices");
-  } catch ($error: any) {
-    throw new Error($error);
-  }
-};
 const newGoGame: GoGameInterface = {
   id: "randomGame",
   gameName: "[Default Game]",
@@ -40,7 +35,9 @@ const newGoGame: GoGameInterface = {
   boardYSize: BOARD_SIZE,
 };
 
-setupBackend();
+const VERTEX_SIZE_9_X_9 = 40;
+const VERTEX_SIZE_13_X_13 = 30;
+const VERTEX_SIZE_19_X_19 = 22;
 
 function IndexPage() {
   const [goBoard, setGoBoard] = useState(new Board(initGoBoard));
@@ -48,6 +45,27 @@ function IndexPage() {
   const [currentMove, setCurrentMove] = useState(FIRST_MOVE);
   const [goHistory, setGoHistory] = useState([goBoard]);
   const [gameErrorMessage, setGameErrorMessage] = useState("");
+  const [vertexSize, setVertexSize] = useState(VERTEX_SIZE_9_X_9);
+
+  useLayoutEffect(() => {
+    switch (goGame.boardXSize) {
+      case 9:
+        setVertexSize(VERTEX_SIZE_9_X_9);
+        break;
+      case 13:
+        setVertexSize(VERTEX_SIZE_13_X_13);
+        break;
+      case 19:
+        setVertexSize(VERTEX_SIZE_19_X_19);
+        break;
+
+      default:
+        setVertexSize(VERTEX_SIZE_19_X_19);
+        break;
+    }
+  }, [goGame]);
+
+  // useState(vertexSize --> make sure that the go board is properly aligned). FOr desktop.
 
   const setupGoBoard = (goGame: GoGameInterface): void => {
     const newInitGoGame = createGoBoard(goGame.boardXSize);
@@ -92,37 +110,61 @@ function IndexPage() {
     }
   };
 
+  const { MoveBar, MoveTable } = AnalysisControls({
+    goMoves: goGame.moves,
+    currentMoveState: [currentMove, setCurrentMove],
+    goHistoryState: [goHistory, setGoHistory],
+    playBoardPosition,
+    turnGoMoveToBoardMove,
+  });
+
   return (
     <ChakraProvider>
       <audio id="moveSound" src={moveSound} />
-      <HStack spacing={1} margin={4}>
-        <MoveBar
-          goMoves={goGame.moves}
-          playBoardPosition={playBoardPosition}
-          currentMoveState={[currentMove, setCurrentMove]}
-          goHistoryState={[goHistory, setGoHistory]}
-          turnGoMoveToBoardMove={turnGoMoveToBoardMove}
-        >
-          <Text fontSize="2xl" textAlign="center">
-            {goGame.gameName}
-          </Text>
-          <GameErrorMessage gameErrorMessage={gameErrorMessage} />
-          <Divider />
-          <Goban
-            vertexSize={24}
-            signMap={goBoard.signMap}
-            onVertexClick={handleGoMoveClick}
-            showCoordinates
-          />
-          <Divider />
-        </MoveBar>
-        <Container>
-          <GameFileExplorer
-            setupGoBoard={setupGoBoard}
-            clearBoard={clearBoard}
-          />
-        </Container>
-      </HStack>
+
+      <Grid
+        templateColumns={[
+          "repeat(1, 1fr)",
+          "repeat(1, 1fr)",
+          "repeat(3, 1fr)",
+          "repeat(4, 1fr)",
+        ]}
+        templateRows={["repeat(3, 400px)", "repeat(2, 400px)"]}
+      >
+        <GridItem>
+          <Container>
+            <GameFileExplorer
+              setupGoBoard={setupGoBoard}
+              clearBoard={clearBoard}
+            />
+          </Container>
+        </GridItem>
+        <GridItem colSpan={2}>
+          <Container>
+            <Center>
+              <Text fontSize="2xl">{goGame.gameName}</Text>
+            </Center>
+            <Center>
+              <GameErrorMessage gameErrorMessage={gameErrorMessage} />
+              <Divider />
+              <Goban
+                vertexSize={vertexSize}
+                signMap={goBoard.signMap}
+                onVertexClick={handleGoMoveClick}
+                showCoordinates
+              />
+              <Divider />
+            </Center>
+            <MoveBar />
+          </Container>
+        </GridItem>
+
+        <GridItem colSpan={1}>
+          <Container>
+            <MoveTable />
+          </Container>
+        </GridItem>
+      </Grid>
     </ChakraProvider>
   );
 }

@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Button,
-  Text,
-  HStack,
-  VStack,
-  Container,
-  Flex,
-} from "@chakra-ui/react";
+import { Button, Text, Center } from "@chakra-ui/react";
 import { GoMove } from "../main";
 import GoBoard, { Sign, Vertex } from "@sabaki/go-board";
 import { moveOptions } from "../helper";
@@ -17,7 +10,6 @@ type AnalysisControlsProps = {
   playBoardPosition: any;
   currentMoveState: [number, any];
   goHistoryState: [GoBoard[], any];
-  children: any;
   turnGoMoveToBoardMove: ([stoneColor, coordinates]: GoMove) => [Sign, Vertex];
 };
 
@@ -33,7 +25,6 @@ function AnalysisControls({
   currentMoveState,
   goHistoryState,
   turnGoMoveToBoardMove,
-  children,
 }: AnalysisControlsProps) {
   const [currentMove, setCurrentMove] = currentMoveState;
   const [goHistory, setGoHistory] = goHistoryState;
@@ -71,19 +62,10 @@ function AnalysisControls({
     setCurrentMove(moveNumber);
   };
 
-  return (
-    <HStack>
-      <VStack>
-        <MoveTable
-          currentMove={currentMove}
-          goMoves={goMoves}
-          playUpTo={playUpTo}
-          captures={captures}
-        />
-      </VStack>
-      <Container>
-        {children}
-        <Flex>
+  return {
+    MoveBar: function () {
+      return (
+        <Center>
           <Button
             data-testid="backButton"
             onClick={() => playUpTo(currentMove - 1)}
@@ -91,18 +73,32 @@ function AnalysisControls({
           >
             {"<"}
           </Button>
-          <Text opacity={currentMove > FIRST_MOVE ? VISIBLE : NOT_VISIBLE}>
+          <Text
+            opacity={currentMove > FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
+            margin={1}
+          >
             {currentMove}/{goMoves.length}
           </Text>
           <Button
             data-testid="forwardButton"
             onClick={() => playUpTo(currentMove + 1)}
+            disabled={currentMove === goMoves.length}
           >
             {">"}
           </Button>
-        </Flex>
-      </Container>
-    </HStack>
-  );
+        </Center>
+      );
+    },
+    MoveTable: function () {
+      return (
+        <MoveTable
+          currentMove={currentMove}
+          goMoves={goMoves}
+          playUpTo={playUpTo}
+          captures={captures}
+        />
+      );
+    },
+  };
 }
 export default AnalysisControls;

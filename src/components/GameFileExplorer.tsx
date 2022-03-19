@@ -101,7 +101,9 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
     clearBoard();
   };
 
-  const byKeyLength = ([keyA]: any, [keyB]: any) => keyA.length - keyB.length;
+  const byKeyLength = ([keyA]: DBGameSection, [keyB]: DBGameSection) => {
+    return String(keyA).length - String(keyB).length;
+  };
 
   return (
     <>
@@ -132,13 +134,14 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
                           onClick={() => setupGoBoard(goGame)}
                         >
                           <Flex alignItems="center">
-                            <Text>{goGame.gameName}</Text>
+                            <Text fontSize="sm">{goGame.gameName}</Text>
                             <Button
                               margin={1}
                               data-testid={`${key}-${goGame.gameName}-delete-button`
                                 .split(" ")
                                 .join("-")}
                               onClick={() => deleteGoGameFromDb(key, goGame.id)}
+                              fontSize="sm"
                             >
                               Delete
                             </Button>

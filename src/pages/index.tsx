@@ -65,8 +65,6 @@ function IndexPage() {
     }
   }, [goGame]);
 
-  // useState(vertexSize --> make sure that the go board is properly aligned). FOr desktop.
-
   const setupGoBoard = (goGame: GoGameInterface): void => {
     const newInitGoGame = createGoBoard(goGame.boardXSize);
     const newGoBoard = new Board(newInitGoGame);
@@ -144,8 +142,8 @@ function IndexPage() {
             <Center>
               <Text fontSize="2xl">{goGame.gameName}</Text>
             </Center>
+
             <Center>
-              <GameErrorMessage gameErrorMessage={gameErrorMessage} />
               <Divider />
               <Goban
                 vertexSize={vertexSize}
@@ -161,6 +159,10 @@ function IndexPage() {
 
         <GridItem colSpan={1}>
           <Container>
+            <Container margin={1}>
+              <GameErrorMessage gameErrorMessage={gameErrorMessage} />
+            </Container>
+            <Divider />
             <MoveTable />
           </Container>
         </GridItem>

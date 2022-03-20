@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
 import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";

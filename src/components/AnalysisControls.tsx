@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Text, Center } from "@chakra-ui/react";
+import { Button, Text, Center, Divider, Container } from "@chakra-ui/react";
 import { GoMove } from "../main";
 import GoBoard, { Sign, Vertex } from "@sabaki/go-board";
 import { moveOptions } from "../helper";
@@ -65,28 +65,30 @@ function AnalysisControls({
   return {
     MoveBar: function () {
       return (
-        <Center>
-          <Button
-            data-testid="backButton"
-            onClick={() => playUpTo(currentMove - 1)}
-            disabled={currentMove === FIRST_MOVE}
-          >
-            {"<"}
-          </Button>
-          <Text
-            opacity={currentMove > FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
-            margin={1}
-          >
-            {currentMove}/{goMoves.length}
-          </Text>
-          <Button
-            data-testid="forwardButton"
-            onClick={() => playUpTo(currentMove + 1)}
-            disabled={currentMove === goMoves.length}
-          >
-            {">"}
-          </Button>
-        </Center>
+        <Container>
+          <Center>
+            <Button
+              data-testid="backButton"
+              onClick={() => playUpTo(currentMove - 1)}
+              disabled={currentMove === FIRST_MOVE}
+            >
+              {"<"}
+            </Button>
+            <Text
+              opacity={currentMove > FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
+              margin={1}
+            >
+              {currentMove}/{goMoves.length}
+            </Text>
+            <Button
+              data-testid="forwardButton"
+              onClick={() => playUpTo(currentMove + 1)}
+              disabled={currentMove === goMoves.length}
+            >
+              {">"}
+            </Button>
+          </Center>
+        </Container>
       );
     },
     MoveTable: function () {

@@ -1,4 +1,14 @@
-import { Table, Thead, Tr, Th, Tbody, Td, Tfoot } from "@chakra-ui/react";
+import {
+  Table,
+  Thead,
+  Tr,
+  Th,
+  Tbody,
+  Td,
+  Container,
+  Divider,
+  Tfoot,
+} from "@chakra-ui/react";
 import { GoMove } from "../main";
 
 type MoveTableProps = {
@@ -20,7 +30,7 @@ type MoveCellProps = {
 type TableMove = { number: number | void; coordinates: string };
 
 const PASS = "";
-const tableBorderStyle = "2px solid black !important";
+const tableBorderStyle = "2px solid black";
 
 const hoverStyles = {
   background: "#2D3748 !important",
@@ -97,49 +107,61 @@ function MoveTable({
   };
 
   return (
-    <Table display="block" colorScheme="blackAlpha" variant="striped">
-      <Thead>
-        <Tr>
-          <Th border={tableBorderStyle}></Th>
-          <Th border={tableBorderStyle}>Black</Th>
-          <Th border={tableBorderStyle}></Th>
-          <Th border={tableBorderStyle}>White</Th>
-        </Tr>
-      </Thead>
-      <Tbody display="block" height={300} overflowY="scroll">
-        {createMovePairs().map(
-          ([blackMove, whiteMove]: TableMove[], index: number) => {
-            return (
-              <Tr
-                key={`${blackMove.coordinates}${whiteMove.coordinates}${String(
-                  index
-                )}`}
-                data-testClassName="moveRow"
-              >
-                <MoveCell
-                  move={blackMove}
-                  currentMove={currentMove}
-                  playUpTo={playUpTo}
-                />
-                <MoveCell
-                  move={whiteMove}
-                  currentMove={currentMove}
-                  playUpTo={playUpTo}
-                />
+    <Container>
+      {goMoves.length ? (
+        <>
+          <Container height={300} overflowY="scroll" margin={1} paddingX={1}>
+            <Table>
+              <Thead>
+                <Tr background="white">
+                  <Th border={tableBorderStyle}></Th>
+                  <Th border={tableBorderStyle}>Black</Th>
+                  <Th border={tableBorderStyle}></Th>
+                  <Th border={tableBorderStyle}>White</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {createMovePairs().map(
+                  ([blackMove, whiteMove]: TableMove[], index: number) => {
+                    return (
+                      <Tr
+                        key={`${blackMove.coordinates}${
+                          whiteMove.coordinates
+                        }${String(index)}`}
+                        data-testClassName="moveRow"
+                      >
+                        <MoveCell
+                          move={blackMove}
+                          currentMove={currentMove}
+                          playUpTo={playUpTo}
+                        />
+                        <MoveCell
+                          move={whiteMove}
+                          currentMove={currentMove}
+                          playUpTo={playUpTo}
+                        />
+                      </Tr>
+                    );
+                  }
+                )}
+              </Tbody>
+            </Table>
+          </Container>
+          <Divider />
+
+          <Table margin={1}>
+            <Tfoot>
+              <Tr border={tableBorderStyle}>
+                <Th border={tableBorderStyle}>Black Captures</Th>
+                <Th border={tableBorderStyle}>{captures.blackStones}</Th>
+                <Th border={tableBorderStyle}>White Captures</Th>
+                <Th border={tableBorderStyle}>{captures.whiteStones}</Th>
               </Tr>
-            );
-          }
-        )}
-      </Tbody>
-      <Tfoot>
-        <Tr>
-          <Th border={tableBorderStyle}>Black Captures</Th>
-          <Th border={tableBorderStyle}>{captures.blackStones}</Th>
-          <Th border={tableBorderStyle}>White Captures</Th>
-          <Th border={tableBorderStyle}>{captures.whiteStones}</Th>
-        </Tr>
-      </Tfoot>
-    </Table>
+            </Tfoot>
+          </Table>
+        </>
+      ) : undefined}
+    </Container>
   );
 }
 

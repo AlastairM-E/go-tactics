@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import {
   Button,
-  Container,
-  UnorderedList,
-  ListItem,
   Text,
-  Flex,
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Tbody,
+  Table,
+  Td,
+  Tr,
 } from "@chakra-ui/react";
 import React from "react";
 import { GoGameInterface, IndexedDBHelper } from "../main";
 import { createDb } from "../helper";
 import SgfUploader from "./SgfUploader";
+import { DeleteIcon } from "@chakra-ui/icons";
 
 type GameExplorerProps = {
   setupGoBoard: (uploadedGoGame: GoGameInterface) => void;
@@ -24,13 +31,7 @@ const storeName = "goGames";
 let goGameDb: undefined | IndexedDBHelper = undefined;
 
 const hoverStyles = {
-  border: "rgba(0,0,0,1) solid 2px",
   cursor: "pointer",
-};
-
-const activeStyles = {
-  background: "#718096",
-  color: "white",
 };
 
 function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
@@ -109,54 +110,104 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
     <>
       <SgfUploader setupGoBoard={setupGoBoard} addGoGameToDb={addGoGameToDb} />
       <Text>Go Games</Text>
-      {goGamesStored
-        ? goGamesStored.sort(byKeyLength).map(([key, goGames]) => {
-            return (
-              <Container key={String(key)}>
-                <Text fontSize={"xl"} data-testid={`${key}Section`}>
-                  {key}
-                </Text>
-                <Container>
-                  <UnorderedList>
-                    {goGames.map((goGame: GoGameInterface, index) => {
-                      return (
-                        <ListItem
-                          border={"rgba(0,0,0,0) solid 2px"}
-                          padding={1}
-                          margin={1}
-                          key={`${goGame.gameName}${String(index)}`}
-                          data-testid={`${key}-${goGame.gameName}`
-                            .split(" ")
-                            .join("-")}
-                          data-testClassName={`${key}Games`}
-                          _hover={hoverStyles}
-                          _active={activeStyles}
-                          onClick={() => setupGoBoard(goGame)}
-                        >
-                          <Flex alignItems="center">
-                            <Text fontSize="sm">{goGame.gameName}</Text>
-                            <Button
+      <Accordion allowMultiple>
+        {goGamesStored
+          ? goGamesStored.sort(byKeyLength).map(([key, goGames]) => {
+              return (
+                <AccordionItem key={String(key)}>
+                  <h2>
+                    <AccordionButton data-testid={`${key}Section`}>
+                      <Box flex="1" textAlign="left">
+                        {key}
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                  </h2>
+                  <AccordionPanel pb={4}>
+                    <Table>
+                      <Tbody>
+                        {goGames.map((goGame: GoGameInterface, index) => {
+                          return (
+                            <Tr
+                              padding={1}
                               margin={1}
-                              data-testid={`${key}-${goGame.gameName}-delete-button`
+                              key={`${goGame.gameName}${String(index)}`}
+                              data-testid={`${key}-${goGame.gameName}`
                                 .split(" ")
                                 .join("-")}
-                              onClick={() => deleteGoGameFromDb(key, goGame.id)}
-                              fontSize="sm"
+                              data-testClassName={`${key}Games`}
+                              onClick={() => setupGoBoard(goGame)}
+                              alignItems="center"
+                              border={"2px solid black"}
+                              _hover={hoverStyles}
                             >
-                              Delete
-                            </Button>
-                          </Flex>
-                        </ListItem>
-                      );
-                    })}
-                  </UnorderedList>
-                </Container>
-              </Container>
-            );
-          })
-        : undefined}
+                              <Td
+                                _hover={{
+                                  background: "green.500",
+                                  color: "white",
+                                }}
+                              >
+                                <Text fontSize="sm">{goGame.gameName}</Text>
+                              </Td>
+                              <Td
+                                onClick={() =>
+                                  deleteGoGameFromDb(key, goGame.id)
+                                }
+                                textAlign="center"
+                                _hover={{
+                                  background: "red.500",
+                                  color: "white",
+                                }}
+                              >
+                                <DeleteIcon
+                                  margin={1}
+                                  data-testid={`${key}-${goGame.gameName}-delete-button`
+                                    .split(" ")
+                                    .join("-")}
+                                />
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                      </Tbody>
+                    </Table>
+                  </AccordionPanel>
+                </AccordionItem>
+              );
+            })
+          : undefined}
+      </Accordion>
     </>
   );
 }
+
+//           Section 1 title
+
+//     </h2>
+//     <AccordionPanel pb={4}>
+//       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+//       tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+//       veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+//       commodo consequat.
+//     </AccordionPanel>
+//   </AccordionItem>
+
+//   <AccordionItem>
+//     <h2>
+//       <AccordionButton>
+//         <Box flex='1' textAlign='left'>
+//           Section 2 title
+//         </Box>
+//         <AccordionIcon />
+//       </AccordionButton>
+//     </h2>
+//
+//       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+//       tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+//       veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+//       commodo consequat.
+//     </AccordionPanel>
+//   </AccordionItem>
+// </Accordion>
 
 export default GameFileExplorer;

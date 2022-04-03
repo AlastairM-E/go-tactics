@@ -37,6 +37,7 @@ describe("SGF file Uploader", () => {
     cy.get(byTestClassName("9x9Games")).should("have.length", SINGLE_GAME);
   });
 
+  // TODO: fix error
   it("can render another Go Game of a different size (13 x 13) after file uploading a game", () => {
     const NUMBER_OF_BLACK_STONES = 50;
     const NUMBER_OF_WHITE_STONES = 53;
@@ -121,8 +122,8 @@ describe("Checking the GameFile Explorer works", () => {
   });
 
   it("On Click of the 9x9 [skrzyniu vs. I_get_a_bit_bored] game, it will move to that game", () => {
-    const INITIAL_NUMBER_OF_BOARD_STONES = 0;
-
+    const FIRST_MOVE_NUMBER_OF_BLACK_STONES = 1;
+    const FIRST_MOVE_NUMBER_OF_WHITE_STONES = 0;
     const SECOND_MOVE_NUMBER_OF_BLACK_STONES = 1;
     const SECOND_MOVE_NUMBER_OF_WHITE_STONES = 1;
 
@@ -130,10 +131,15 @@ describe("Checking the GameFile Explorer works", () => {
     cy.wait(2_500);
     cy.get(byTestId("9x9-skrzyniu-vs.-I_get_a_bit_bored")).click();
 
-    cy.get(blackStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
-    cy.get(whiteStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
+    cy.get(blackStones).should(
+      "have.length",
+      FIRST_MOVE_NUMBER_OF_BLACK_STONES
+    );
+    cy.get(whiteStones).should(
+      "have.length",
+      FIRST_MOVE_NUMBER_OF_WHITE_STONES
+    );
 
-    cy.get(byTestId("forwardButton")).click();
     cy.get(byTestId("forwardButton")).click();
 
     cy.get(blackStones).should(
@@ -149,7 +155,8 @@ describe("Checking the GameFile Explorer works", () => {
   it("On Click of the 19x19 [goggly vs. I_get_a_bit_bored] game, it will move to that game", () => {
     const NUMBER_OF_9_X_9_VERTEXES = 9 * 9;
     const NUMBER_OF_19_X_19_VERTEXES = 19 * 19;
-    const INITIAL_NUMBER_OF_BOARD_STONES = 0;
+    const FIRST_MOVE_NUMBER_OF_BLACK_STONES = 1;
+    const FIRST_MOVE_NUMBER_OF_WHITE_STONES = 0;
     const SECOND_MOVE_NUMBER_OF_BLACK_STONES = 1;
     const SECOND_MOVE_NUMBER_OF_WHITE_STONES = 1;
 
@@ -161,10 +168,15 @@ describe("Checking the GameFile Explorer works", () => {
 
     cy.get(vertexes).should("have.length", NUMBER_OF_19_X_19_VERTEXES);
 
-    cy.get(blackStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
-    cy.get(whiteStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
+    cy.get(blackStones).should(
+      "have.length",
+      FIRST_MOVE_NUMBER_OF_BLACK_STONES
+    );
+    cy.get(whiteStones).should(
+      "have.length",
+      FIRST_MOVE_NUMBER_OF_WHITE_STONES
+    );
 
-    cy.get(byTestId("forwardButton")).click();
     cy.get(byTestId("forwardButton")).click();
 
     cy.get(blackStones).should(

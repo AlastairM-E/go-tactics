@@ -12,6 +12,7 @@ import {
   Table,
   Td,
   Tr,
+  Thead,
 } from "@chakra-ui/react";
 import React from "react";
 import { GoGameInterface, IndexedDBHelper } from "../main";
@@ -114,65 +115,59 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
         {goGamesStored
           ? goGamesStored.sort(byKeyLength).map(([key, goGames]) => {
               return (
-                <AccordionItem key={String(key)}>
-                  <h2>
-                    <AccordionButton data-testid={`${key}Section`}>
-                      <Box flex="1" textAlign="left">
-                        {key}
-                      </Box>
-                      <AccordionIcon />
-                    </AccordionButton>
-                  </h2>
-                  <AccordionPanel pb={4}>
-                    <Table>
-                      <Tbody>
-                        {goGames.map((goGame: GoGameInterface, index) => {
-                          return (
-                            <Tr
-                              padding={1}
-                              margin={1}
-                              key={`${goGame.gameName}${String(index)}`}
-                              data-testid={`${key}-${goGame.gameName}`
-                                .split(" ")
-                                .join("-")}
-                              data-testClassName={`${key}Games`}
-                              onClick={() => setupGoBoard(goGame)}
-                              alignItems="center"
-                              border={"2px solid black"}
-                              _hover={hoverStyles}
+                <>
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Text data-testid={`${key}Section`}>{key}</Text>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {goGames.map((goGame: GoGameInterface, index) => {
+                        return (
+                          <Tr
+                            padding={1}
+                            margin={1}
+                            key={`${goGame.gameName}${String(index)}`}
+                            data-testid={`${key}-${goGame.gameName}`
+                              .split(" ")
+                              .join("-")}
+                            data-testClassName={`${key}Games`}
+                            onClick={() => setupGoBoard(goGame)}
+                            alignItems="center"
+                            border={"2px solid black"}
+                            _hover={hoverStyles}
+                          >
+                            <Td
+                              borderRight={"2px solid black"}
+                              _hover={{
+                                background: "green.500",
+                                color: "white",
+                              }}
                             >
-                              <Td
-                                _hover={{
-                                  background: "green.500",
-                                  color: "white",
-                                }}
-                              >
-                                <Text fontSize="sm">{goGame.gameName}</Text>
-                              </Td>
-                              <Td
-                                onClick={() =>
-                                  deleteGoGameFromDb(key, goGame.id)
-                                }
-                                textAlign="center"
-                                _hover={{
-                                  background: "red.500",
-                                  color: "white",
-                                }}
-                              >
-                                <DeleteIcon
-                                  margin={1}
-                                  data-testid={`${key}-${goGame.gameName}-delete-button`
-                                    .split(" ")
-                                    .join("-")}
-                                />
-                              </Td>
-                            </Tr>
-                          );
-                        })}
-                      </Tbody>
-                    </Table>
-                  </AccordionPanel>
-                </AccordionItem>
+                              <Text fontSize="sm">{goGame.gameName}</Text>
+                            </Td>
+                            <Td
+                              onClick={() => deleteGoGameFromDb(key, goGame.id)}
+                              textAlign="center"
+                              _hover={{
+                                background: "red.500",
+                                color: "white",
+                              }}
+                            >
+                              <DeleteIcon
+                                margin={1}
+                                data-testid={`${key}-${goGame.gameName}-delete-button`
+                                  .split(" ")
+                                  .join("-")}
+                              />
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </>
               );
             })
           : undefined}

@@ -20,7 +20,6 @@ import AnalysisControls from "../components/AnalysisControls";
 
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
-const ADJUST_INDEX = 1;
 const BOARD_SIZE = 9;
 const initGoBoard: SignMap = createGoBoard(BOARD_SIZE);
 const FIRST_MOVE = 0;
@@ -35,6 +34,16 @@ const newGoGame: GoGameInterface = {
   boardYSize: BOARD_SIZE,
 };
 
+/* REFACTOR: have goHistory line up with the GoMoves, and thus currentMoves. */
+// * The reason is that having goHistory preserving the blank board state means it is outof sync with
+// goGame.moves and currentMove, so everything has to be adjusted.
+// * This means that instead of currentMove, goMoves and goHistory beign in sync, with the blank board at the
+// end handle spearately, the blank baord is handle inside goHistory, making it harder to develop new features.
+
+/*
+ * Coordiantes are aphlaNumberic e.g. E4
+ * Vertexes are an array of numbers representing a coordiante e.g. [2, 5]
+ */
 const VERTEX_SIZE_9_X_9 = 40;
 const VERTEX_SIZE_13_X_13 = 30;
 const VERTEX_SIZE_19_X_19 = 22;
@@ -66,11 +75,26 @@ function IndexPage() {
     }
   }, [goGame]);
 
-  const setupGoBoard = (goGame: GoGameInterface): void => {
-    const newInitGoGame = createGoBoard(goGame.boardXSize);
-    const newGoBoard = new Board(newInitGoGame);
+  const setupGoBoard = (nextGoGame: GoGameInterface): void => {
+    const newInitGoGame = createGoBoard(nextGoGame.boardXSize);
+    const initGoBoard = new Board(newInitGoGame);
 
-    setGoGame(goGame);
+    const [moveColor, moveVertex] = turnGoMoveToBoardMove(
+      nextGoGame.moves[FIRST_MOVE],
+      initGoBoard
+    );
+    const newGoBoard = initGoBoard.makeMove(moveColor, moveVertex, moveOptions);
+
+    console.log({
+      initGoBoard,
+      newGoBoard,
+      firstMove: nextGoGame.moves[FIRST_MOVE],
+      moveColor,
+      moveVertex,
+      moveOptions,
+    });
+
+    setGoGame(nextGoGame);
     setCurrentMove(FIRST_MOVE);
 
     setGoBoard(newGoBoard);
@@ -79,12 +103,12 @@ function IndexPage() {
 
   const clearBoard = () => setupGoBoard(newGoGame);
 
-  const turnGoMoveToBoardMove = ([stoneColor, coordinates]: GoMove): [
-    Sign,
-    Vertex
-  ] => {
+  const turnGoMoveToBoardMove = (
+    [stoneColor, coordinates]: GoMove,
+    currentGoBoard: Board
+  ): [Sign, Vertex] => {
     const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
-    const moveVertex = goBoard.parseVertex(coordinates);
+    const moveVertex = currentGoBoard.parseVertex(coordinates);
 
     return [moveColor, moveVertex];
   };
@@ -135,7 +159,7 @@ function IndexPage() {
       const colorOfStone = userPlayer === BLACK_STONE ? "B" : "W";
       const goMove: GoMove = [colorOfStone, parsedVertex];
 
-      const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove);
+      const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove, goBoard);
       const newGoBoard = goBoard.makeMove(moveColor, moveVertex, moveOptions);
 
       const updatedGoGame = addMoveToGoGame(goMove, newGoBoard);

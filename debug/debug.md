@@ -1,69 +1,135 @@
 # Defect
 
-- When I click on any vertex the site goes blank.
+- When the last move is clicked for the 13x13 go game, it does not seem to go to the last move.
 
 ## Reproduce
 
-- Click on any vertex on the default site board.
-- if you do, the page will go blank.
+- Test produce the error, I need to check elsewhere.
+- LOok at fixtures to confirm the issue.
+- The first mvoe does not render, whilst is that.
+- Specifically, it is missing the first move.
 
 ## Gather
 
-- See if it works on go game boards, checks to see if the probnlem is universal.
-- If not, that means it is almost definitely regarding my addGoMoveToGoGame thingy.
-- Then breakpoints to confirm.
+- I have spotted that whent eh first move is rendered, nothing happens unless you click the stored Game moves 2 times.
+- clear all boards and start with the 13x13 one. The 9x9 board is fine for some reason. Look at the goHistory, state and co before and after the load. Record those values. THis is to determine if the issue before the GoGame table or after. Then I can try to find what is casuing the issue.
 
-Is just when you click the go board, though sound is not coming through either.
+ALso look for any error in the development console. Relay them back.
 
-Breakpoint to find the issue.
+```
+Uncaught (in promise) TypeError: _ref is not iterable
+    at turnGoMoveToBoardMove (index.tsx:97:1)
+    at setupGoBoard (index.tsx:76:1)
+    at clearBoard (index.tsx:92:1)
+    at deleteGoGameFromDb (GameFileExplorer.tsx:102:1)
+```
 
-- Initial looks show: `AnalysisControls.tsx:32 Uncaught TypeError: Cannot read properties of undefined (reading 'getCaptures')`.
-- In additions: `at IndexPage (http://localhost:3000/static/js/bundle.js:1265:80)`.
-- No network issue.
+Before 13 x13 game is uploaded:
 
-Ran integration test suite as well. 4 passed, 11 failed:
+- goGame: newGoGame.
+- goBoard: (blank 9x9 board).
+- goHistory: [(blank 9x9 board)] (length of array is 1).
+- currentMove: 0.
 
-- Cannot read properties of undefined (reading 'getCaptures').
-- undefined is not iterable (forward button).
-- undefined is not iterable (forward button).
-- undefined is not iterable (tableMove).
-- undefined is not iterable (tableMove).
-- undefined is not iterable (tableMove).
-- undefined is not iterable (tableMove).
-- undefined is not iterable (tableMove).
-- undefined is not iterable (forward button).
-- undefined is not iterable (forward button).
-- Accordian being covered up shudan.
+No errors.
 
-I need to figure out what is undefined. Breakpoints on everything new, since this was not any issue last time.
+After 13 x13 game is uploaded:
 
-goHistory needs to have the first item as well as the last -\_> it is not the current boardposition, but the next one it gets.
+- goGame: 13x13 MalmoBudapest game..
+- goBoard: (blank 13x13 board).
+- goHistory: [(blank 13x13 board)] (length of array is 1).
+- currentMove: 0.
 
-Exits, going inside the goGame.moves.length first --> that is zero.
+Errors: React does not recognize the `data-testClassName` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `data-testclassname` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
 
-- I need to fix this issue as well, by providing the updatedGoGame as well.
+WHy is the goBOard blank?
 
-Updated mvoes.length = 1, yet histroy has only 1 element, indexed at zero.
-
-Therefore, I can hypothesis the issue
+In the setup GoBoard section, the new Board(initXYZ) is called. I want to research the new keyword, as it would point that if the goBoard is the fulty part, the problem gomes from the newGobard variable, sinc ethat create the new board. Look up the new keyword on mdn to find out more and see if there is a decent argument to be made. THink there might be something, look at the docs in sabaki go board before making a decision.
 
 ## Hypothesis
 
-SInce the udnefiend is in the captures, which uses currentMove for to get the apprioprate captures, then when the currentMOve is set to updatedMove.length which is 1, hwoever, there is a only a zero index history items, since the intial bnlank board was not added beforehand.
+- The goBoard is returning the non makeMOve baord rather than the new one. This may be becaus eht e new keyword returns a new instance of an object (in htis case the goBoard constructor). However, the makeMove also returns a new instance.
 
-If I am right, then if I keep the blank board in history board, then it will have the apprioprate currentMOve for the goHIstory array to access, thus, it will all work fine.
+Due to something inside the api, this means the board instance is the old one rather than the new one.
+This is not strong, but it should be explored to confirm that it is incorrect. In addition, it is none breaking change (more of a refactor really), so if it is wrong, it will rule out th eissu ebeing with the newGoBoard variable regarding this situation.
 
-However, if I am wrong, then the error will remain or will change in some way.
+If I am right, given the lack of proof and testing on MDN I have done, it will make no difference and the first move will still error.
+If I am wrong, then the issue will be fixed. The issue could still be in the newGoBoard.
 
 ### Test
 
-- Breakpoint, and then see what the updatedGoHistory, is, check that it has 2 values isntead of 1.
+Run the initGOboard (from the initGoSKeletonBoard) and newGoBoard ebign the .makeMove one.
+Record if it passes or not.
 
-History api has 2, lets see if it fixes teh integration test suite., aiming for the undefined errors to go away.
+The test failed, I was right:
 
-Test still failed? Captures are not working.
+- initGoBoard: (blank 13x13 GoBoard).
+- newGoBoard: (blank 13x13 GoBoard).
 
-I will pass in the updatedGoGame to the changeUserPlayerColor, then I will work with the rest.
+Errors: None.
 
-13 2 from new test, issue seems fixed now, but needs more work to get game to change.
-goGame is past one, not the future one, so it will always be incorrect.
+If the initGoBoard.makeMove returns the same blank board as teh newGoBoard, that should means the moves or function which is passed into it are producing the incorrect result.
+
+I do know that the makeMove function is causing the sympto, fault here. How it is, I don't know.
+
+## Gather
+
+Log what is being passed into the makeMove function and response back. If there is a clear fault, then I need to investigate that and this seems to be where the error is starting.
+
+- initGoBoard: (blank 13x13 Board).
+- newGoBoard: (blank 13x13 Board).
+- firstMove: ['B', 'K4'].
+- moveColor: 1 = BLACK_STONE
+- moveVertex: [-1, -1] = error in translation.
+- moveOptions: moveOPtions
+
+Any errors:
+
+```
+React does not recognize the `data-testClassName` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `data-testclassname` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+```
+
+Since there is in error in the moveVertex --> this means that I need to look into the problem inside the turnGoMoveToBoardMove function.
+
+I need to use breakpoint to understand exactly what is going on it this function. ONce I do, then I can log my findings here and if they point to an issue, I can hypothesis.
+
+```
+  const turnGoMoveToBoardMove = ([stoneColor, coordinates]: GoMove): [
+    Sign,
+    Vertex
+  ] => {
+    const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
+    const moveVertex = goBoard.parseVertex(coordinates);
+
+    return [moveColor, moveVertex];
+  };
+```
+
+Look into:
+
+- stoneColor: "B".
+- coordinates: "K4".
+- moveColor: 1.
+- moveVertex: [-1, -1].
+- goBoard: (blank 9x9 go board).
+
+With the goBoard being a blank 9x9 go board, I can hypothesis.
+
+## Hypothesis - it is the goBoard parseVertex
+
+Note: issue around past goGame moves being passed into translateGoMove?.
+
+The goBoard (state) is beign used to parseVertexes in turnGoMoveToBoardMove. This is the current go board (not future to be setup go board). This is can be 9x9 when the setup go board in 13x13 for example. This means that when the person setup up the new board, they need to make a more. However, in 13x13 boards, the coordinate will be passed differently than in a 9x9 board, as a move in the 44 corner of a 13x13 board, may not exist on a 9x9 one, simply because it is a 9x9 baord odes not have room.
+
+If I am right and this is th eissue, If I pass in the newGoBoard to be and have that parse the moves, then it wil parse the correct moves e.g. for a 13x13 board rather than a 9x9 board for example, and thus this will be correctly done. Repeat for all errors this is a problem.
+
+If I am wrong, the same will remain.
+
+### Test
+
+- Reload app to default 9x9.
+- Click 13x13 saved game.
+
+Should see first move. Yes.
+
+Integration suite full run: 14 pass 1 fail.

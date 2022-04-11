@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useState } from "react";
 import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
-import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";
+import Board, { Sign, SignMap } from "@sabaki/go-board";
 import {
   Container,
   Divider,
@@ -15,7 +15,7 @@ import { GoGameInterface, GoMove } from "../main";
 import GameErrorMessage from "../components/GameErrorMessage";
 import moveSound from "../audio/placeStone.mp3";
 import GameFileExplorer from "../components/GameFileExplorer";
-import { createGoBoard, moveOptions } from "../helper";
+import { createGoBoard, moveOptions, turnGoMoveToBoardMove } from "../helper";
 import AnalysisControls from "../components/AnalysisControls";
 
 const BLACK_STONE: Sign = 1;
@@ -49,11 +49,12 @@ const VERTEX_SIZE_13_X_13 = 30;
 const VERTEX_SIZE_19_X_19 = 22;
 
 function IndexPage() {
-  const [goBoard, setGoBoard] = useState(new Board(initGoBoard));
-  const [goGame, setGoGame] = useState(newGoGame);
-  const [currentMove, setCurrentMove] = useState(FIRST_MOVE);
-  const [userPlayer, setUserPlayer] = useState(BLACK_STONE);
-  const [goHistory, setGoHistory] = useState([goBoard]);
+  const [goBoard, setGoBoard] = useState(new Board(initGoBoard)); // cleared
+  const [goGame, setGoGame] = useState(newGoGame); // cleared
+  const [currentMove, setCurrentMove] = useState(FIRST_MOVE); // cleared
+  const [goHistory, setGoHistory] = useState([goBoard]); // cleared
+  const [userPlayer, setUserPlayer] = useState(BLACK_STONE); // cleared
+
   const [gameErrorMessage, setGameErrorMessage] = useState("");
   const [vertexSize, setVertexSize] = useState(VERTEX_SIZE_9_X_9);
 
@@ -75,6 +76,7 @@ function IndexPage() {
     }
   }, [goGame]);
 
+  /* GO BOARD REDUCER - setupGoBoard */
   const setupGoBoard = (nextGoGame: GoGameInterface): void => {
     const newInitGoGame = createGoBoard(nextGoGame.boardXSize);
     const initGoBoard = new Board(newInitGoGame);
@@ -85,15 +87,6 @@ function IndexPage() {
     );
     const newGoBoard = initGoBoard.makeMove(moveColor, moveVertex, moveOptions);
 
-    console.log({
-      initGoBoard,
-      newGoBoard,
-      firstMove: nextGoGame.moves[FIRST_MOVE],
-      moveColor,
-      moveVertex,
-      moveOptions,
-    });
-
     setGoGame(nextGoGame);
     setCurrentMove(FIRST_MOVE);
 
@@ -103,16 +96,7 @@ function IndexPage() {
 
   const clearBoard = () => setupGoBoard(newGoGame);
 
-  const turnGoMoveToBoardMove = (
-    [stoneColor, coordinates]: GoMove,
-    currentGoBoard: Board
-  ): [Sign, Vertex] => {
-    const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
-    const moveVertex = currentGoBoard.parseVertex(coordinates);
-
-    return [moveColor, moveVertex];
-  };
-
+  /* GO BOARD REDUCER - addMoveToGoGame */
   const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
     const byOnlyPastMoves = (move: GoMove, index: number) => {
       return index < currentMove;
@@ -135,6 +119,7 @@ function IndexPage() {
     return updatedGoGame;
   };
 
+  /* GO BOARD REDUCER - changePlayerStoneColor */
   const changePlayerStoneColor = (goMoves: GoMove[]) => {
     if (goMoves.length === FIRST_MOVE) {
       setUserPlayer(WHITE_STONE);
@@ -146,6 +131,7 @@ function IndexPage() {
     }
   };
 
+  /* GO BOARD REDUCER - playBoardPosition */
   const playBoardPosition = (boardPosition: Board) => {
     setGoBoard(boardPosition);
 

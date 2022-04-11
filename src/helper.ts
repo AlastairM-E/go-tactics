@@ -1,6 +1,9 @@
-import { SignMap, Sign } from "@sabaki/go-board";
+import GoBoard, { SignMap, Sign, Vertex } from "@sabaki/go-board";
 import { openDB } from "idb";
-import { GoGameInterface, IndexedDBHelper } from "./main";
+import { GoGameInterface, GoMove, IndexedDBHelper } from "./main";
+
+const BLACK_STONE: Sign = 1;
+const WHITE_STONE: Sign = -1;
 
 const createGoBoard = (boardSize: number): SignMap => {
   const emptyGoBoard = [];
@@ -57,10 +60,37 @@ const createDb = async (
   };
 };
 
+const turnGoMoveToBoardMove = (
+  [stoneColor, coordinates]: GoMove,
+  currentGoBoard: GoBoard
+): [Sign, Vertex] => {
+  const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
+  const moveVertex = currentGoBoard.parseVertex(coordinates);
+
+  return [moveColor, moveVertex];
+};
+
 const moveOptions = {
   preventSuicide: true,
   preventKo: true,
   preventOverwrite: true,
 };
 
-export { createGoBoard, createDb, moveOptions };
+const newGoGame: GoGameInterface = {
+  id: "randomGame",
+  gameName: "[Default Game]",
+  initialStones: [],
+  moves: [],
+  rules: "tromp-taylor",
+  komi: 7.5,
+  boardXSize: 9,
+  boardYSize: 9,
+};
+
+export {
+  createGoBoard,
+  createDb,
+  turnGoMoveToBoardMove,
+  moveOptions,
+  newGoGame,
+};

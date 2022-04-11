@@ -1,3 +1,5 @@
+import { Sign } from "@sabaki/go-board";
+
 export type GoMove = ["B" | "W", string];
 
 export interface GoGameInterface {
@@ -19,4 +21,12 @@ export type IndexedDBHelper = {
   del: (key: IDBValidKey) => Promise<void>;
   getAll: () => Promise<GoGameInterface[][]>;
   keys: () => Promise<IDBValidKey[]>;
+};
+
+export type goBoardState = {
+  goGame: GoGameInterface;
+  goBoard: GoBoard;
+  goHistory: GoBoard[];
+  currentMove: number;
+  userPlayer: Sign;
 };

@@ -37,6 +37,7 @@ function AnalysisControls({
     whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
   };
 
+  /* GO BOARD REDUCER - playUpTo */
   const playUpTo = (moveNumber: number) => {
     if (moveNumber > goMoves.length) return undefined;
     if (goHistory[moveNumber]) {

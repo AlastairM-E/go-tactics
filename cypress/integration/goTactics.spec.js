@@ -29,19 +29,14 @@ describe("Forward and Back buttons", () => {
   });
 
   it("9x9 go board when initally loaded should be empty, but get more moves with forward and back buttons", () => {
-    const INITIAL_NUMBER_OF_BOARD_STONES = 0;
     const FIRST_MOVE_NUMBER_OF_BLACK_STONES = 1;
     const FIRST_MOVE_NUMBER_OF_WHITE_STONES = 0;
+    const SECOND_MOVE_NUMBER_OF_BLACK_STONES = 1;
+    const SECOND_MOVE_NUMBER_OF_WHITE_STONES = 1;
 
     cy.get(byTestId("fileUploader")).attachFile("9x9_go_game.sgf");
     cy.get(byTestId("submitFile")).click();
     cy.wait(1_000);
-    cy.get(blackStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
-    cy.get(whiteStones).should("have.length", INITIAL_NUMBER_OF_BOARD_STONES);
-
-    cy.get(byTestId("backButton")).should("be.disabled");
-    cy.get(byTestId("forwardButton")).click();
-    cy.get(byTestId("backButton")).should("not.be.disabled");
     cy.get(blackStones).should(
       "have.length",
       FIRST_MOVE_NUMBER_OF_BLACK_STONES
@@ -51,10 +46,21 @@ describe("Forward and Back buttons", () => {
       FIRST_MOVE_NUMBER_OF_WHITE_STONES
     );
 
+    cy.get(byTestId("backButton")).should("be.disabled");
+    cy.get(byTestId("forwardButton")).click();
+    cy.get(byTestId("backButton")).should("not.be.disabled");
+    cy.get(blackStones).should(
+      "have.length",
+      SECOND_MOVE_NUMBER_OF_BLACK_STONES
+    );
+    cy.get(whiteStones).should(
+      "have.length",
+      SECOND_MOVE_NUMBER_OF_WHITE_STONES
+    );
+
     const FOURTH_MOVE_NUMBER_OF_BLACK_STONES = 2;
     const FOURTH_MOVE_NUMBER_OF_WHITE_STONES = 2;
 
-    cy.get(byTestId("forwardButton")).click();
     cy.get(byTestId("forwardButton")).click();
     cy.get(byTestId("forwardButton")).click();
     cy.get(blackStones).should(
@@ -80,6 +86,7 @@ describe("Forward and Back buttons", () => {
 
     cy.get(byTestId("backButton")).click();
     cy.get(byTestId("backButton")).click();
+    cy.get(byTestId("backButton")).should("be.disabled");
     cy.get(blackStones).should(
       "have.length",
       FIRST_MOVE_NUMBER_OF_BLACK_STONES
@@ -88,9 +95,6 @@ describe("Forward and Back buttons", () => {
       "have.length",
       FIRST_MOVE_NUMBER_OF_WHITE_STONES
     );
-
-    cy.get(byTestId("backButton")).click();
-    cy.get(byTestId("backButton")).should("be.disabled");
   });
 
   it("Should hop between sgf file uploads at the correct board size", () => {
@@ -132,6 +136,7 @@ describe("Go Game Table", () => {
     cy.get(byTestClassName("moveRow")).should("have.length", TOTAL_GAME_MOVES);
   });
 
+  // TODO: fix error
   it("goes to a particular move when you click a table entry, backwards & forwards", () => {
     const FIRST_MOVE = 1;
     const NUMBER_OF_BLACK_STONES_ON_THE_FIRST_MOVE = 1;

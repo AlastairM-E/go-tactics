@@ -11,6 +11,7 @@ const databaseName = "goGameStore";
 const blackStones = ".shudan-inner.shudan-stone-image.shudan-sign_1";
 const whiteStones = ".shudan-inner.shudan-stone-image.shudan-sign_-1";
 
+/* No need to change test */
 describe("Go Board can make moves on the board", () => {
   before(() => {
     indexedDB.deleteDatabase(databaseName);
@@ -68,3 +69,6 @@ describe("Go Board can make moves on the board", () => {
     cy.get(byTestId("tableMove4")).should("not.exist");
   });
 });
+
+/* Play moves inside the board when resummoned */
+// - this requires branches to be made, since you want to return to the original game as well.

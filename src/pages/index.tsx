@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useState } from "react";
 import { Goban } from "@sabaki/shudan";
 import "../lib/shudan/css/goban.css";
-import Board, { Sign, SignMap, Vertex } from "@sabaki/go-board";
+import Board, { Sign, SignMap } from "@sabaki/go-board";
 import {
   Container,
   Divider,
@@ -15,12 +15,12 @@ import { GoGameInterface, GoMove } from "../main";
 import GameErrorMessage from "../components/GameErrorMessage";
 import moveSound from "../audio/placeStone.mp3";
 import GameFileExplorer from "../components/GameFileExplorer";
-import { createGoBoard, moveOptions } from "../helper";
+import { createGoBoard, moveOptions, turnGoMoveToBoardMove } from "../helper";
 import AnalysisControls from "../components/AnalysisControls";
+import goBoardReducer from "./goBoardReducer";
 
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
-const ADJUST_INDEX = 1;
 const BOARD_SIZE = 9;
 const initGoBoard: SignMap = createGoBoard(BOARD_SIZE);
 const FIRST_MOVE = 0;
@@ -35,16 +35,27 @@ const newGoGame: GoGameInterface = {
   boardYSize: BOARD_SIZE,
 };
 
+/* REFACTOR: have goHistory line up with the GoMoves, and thus currentMoves. */
+// * The reason is that having goHistory preserving the blank board state means it is outof sync with
+// goGame.moves and currentMove, so everything has to be adjusted.
+// * This means that instead of currentMove, goMoves and goHistory beign in sync, with the blank board at the
+// end handle spearately, the blank baord is handle inside goHistory, making it harder to develop new features.
+
+/*
+ * Coordiantes are aphlaNumberic e.g. E4
+ * Vertexes are an array of numbers representing a coordiante e.g. [2, 5]
+ */
 const VERTEX_SIZE_9_X_9 = 40;
 const VERTEX_SIZE_13_X_13 = 30;
 const VERTEX_SIZE_19_X_19 = 22;
 
 function IndexPage() {
-  const [goBoard, setGoBoard] = useState(new Board(initGoBoard));
-  const [goGame, setGoGame] = useState(newGoGame);
-  const [currentMove, setCurrentMove] = useState(FIRST_MOVE);
-  const [userPlayer, setUserPlayer] = useState(BLACK_STONE);
-  const [goHistory, setGoHistory] = useState([goBoard]);
+  const [goBoard, setGoBoard] = useState(new Board(initGoBoard)); // cleared
+  const [goGame, setGoGame] = useState(newGoGame); // cleared
+  const [currentMove, setCurrentMove] = useState(FIRST_MOVE); // cleared
+  const [goHistory, setGoHistory] = useState([goBoard]); // cleared
+  const [userPlayer, setUserPlayer] = useState(BLACK_STONE); // cleared
+
   const [gameErrorMessage, setGameErrorMessage] = useState("");
   const [vertexSize, setVertexSize] = useState(VERTEX_SIZE_9_X_9);
 
@@ -66,29 +77,61 @@ function IndexPage() {
     }
   }, [goGame]);
 
-  const setupGoBoard = (goGame: GoGameInterface): void => {
-    const newInitGoGame = createGoBoard(goGame.boardXSize);
-    const newGoBoard = new Board(newInitGoGame);
+  /* GO BOARD REDUCER - setupGoBoard */
+  const setupGoBoard = (nextGoGame: GoGameInterface): void => {
+    // new setupGoBoard
+    const initialState = {
+      goGame,
+      goBoard,
+      goHistory,
+      currentMove,
+      userPlayer,
+    };
 
-    setGoGame(goGame);
-    setCurrentMove(FIRST_MOVE);
+    const {
+      goGame: nextGoGameToSetup,
+      goBoard: nextGoBoard,
+      goHistory: nextGoHistory,
+      currentMove: nextCurrentMove,
+      userPlayer: nextUserPlayer,
+    } = goBoardReducer(initialState, {
+      type: "SETUP_BOARD",
+      payload: nextGoGame,
+    });
 
-    setGoBoard(newGoBoard);
-    setGoHistory([newGoBoard]);
+    console.log("SETUP_BOARD", {
+      nextGoGameToSetup,
+      nextGoBoard,
+      nextGoHistory,
+      nextCurrentMove,
+      nextUserPlayer,
+    });
+
+    setGoGame(nextGoGameToSetup);
+    setCurrentMove(nextCurrentMove);
+    setGoBoard(nextGoBoard);
+    setGoHistory(nextGoHistory);
+    setUserPlayer(nextUserPlayer);
+
+    // old setupGoBoard
+    // const newInitGoGame = createGoBoard(nextGoGame.boardXSize);
+    // const initGoBoard = new Board(newInitGoGame);
+
+    // const [moveColor, moveVertex] = turnGoMoveToBoardMove(
+    //   nextGoGame.moves[FIRST_MOVE],
+    //   initGoBoard
+    // );
+    // const newGoBoard = initGoBoard.makeMove(moveColor, moveVertex, moveOptions);
+
+    // setGoGame(nextGoGame);
+    // setCurrentMove(FIRST_MOVE);
+    // setGoBoard(newGoBoard);
+    // setGoHistory([newGoBoard]);
   };
 
   const clearBoard = () => setupGoBoard(newGoGame);
 
-  const turnGoMoveToBoardMove = ([stoneColor, coordinates]: GoMove): [
-    Sign,
-    Vertex
-  ] => {
-    const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
-    const moveVertex = goBoard.parseVertex(coordinates);
-
-    return [moveColor, moveVertex];
-  };
-
+  /* GO BOARD REDUCER - addMoveToGoGame */
   const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
     const byOnlyPastMoves = (move: GoMove, index: number) => {
       return index < currentMove;
@@ -111,6 +154,7 @@ function IndexPage() {
     return updatedGoGame;
   };
 
+  /* GO BOARD REDUCER - changePlayerStoneColor */
   const changePlayerStoneColor = (goMoves: GoMove[]) => {
     if (goMoves.length === FIRST_MOVE) {
       setUserPlayer(WHITE_STONE);
@@ -122,6 +166,7 @@ function IndexPage() {
     }
   };
 
+  /* GO BOARD REDUCER - playBoardPosition */
   const playBoardPosition = (boardPosition: Board) => {
     setGoBoard(boardPosition);
 
@@ -135,7 +180,7 @@ function IndexPage() {
       const colorOfStone = userPlayer === BLACK_STONE ? "B" : "W";
       const goMove: GoMove = [colorOfStone, parsedVertex];
 
-      const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove);
+      const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove, goBoard);
       const newGoBoard = goBoard.makeMove(moveColor, moveVertex, moveOptions);
 
       const updatedGoGame = addMoveToGoGame(goMove, newGoBoard);

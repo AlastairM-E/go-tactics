@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Text, Center, Divider, Container } from "@chakra-ui/react";
+import { Button, Text, Center, Container } from "@chakra-ui/react";
 import { GoMove } from "../main";
 import GoBoard, { Sign, Vertex } from "@sabaki/go-board";
 import { moveOptions } from "../helper";
@@ -10,14 +10,20 @@ type AnalysisControlsProps = {
   playBoardPosition: any;
   currentMoveState: [number, any];
   goHistoryState: [GoBoard[], any];
-  turnGoMoveToBoardMove: ([stoneColor, coordinates]: GoMove) => [Sign, Vertex];
+  turnGoMoveToBoardMove: (
+    [stoneColor, coordinates]: GoMove,
+    currentGoBoard: GoBoard
+  ) => [Sign, Vertex];
 };
 
+const ADJUST_FOR_ARRAY_INDEX = 1;
 const FIRST_MOVE = 0;
 const VISIBLE = 1;
 const NOT_VISIBLE = 0;
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
+
+let counter = 0;
 
 function AnalysisControls({
   goMoves,
@@ -28,11 +34,18 @@ function AnalysisControls({
 }: AnalysisControlsProps) {
   const [currentMove, setCurrentMove] = currentMoveState;
   const [goHistory, setGoHistory] = goHistoryState;
+
+  console.log((counter += 1), {
+    currentMove,
+    goHistory,
+    currrentBoard: goHistory[currentMove],
+  });
   const captures = {
     blackStones: goHistory[currentMove].getCaptures(BLACK_STONE),
     whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
   };
 
+  /* GO BOARD REDUCER - playUpTo */
   const playUpTo = (moveNumber: number) => {
     if (moveNumber > goMoves.length) return undefined;
     if (goHistory[moveNumber]) {
@@ -41,13 +54,16 @@ function AnalysisControls({
       const currentGoHistory = goHistory;
       let nextBoardPosition: GoBoard | void = undefined;
 
-      for (let index = currentMove; moveNumber > index; index += 1) {
-        const NEXT_INDEX = index + 1;
+      for (let CURRENT = currentMove; moveNumber > CURRENT; CURRENT += 1) {
+        const NEXT_INDEX = CURRENT + 1;
 
         if (currentGoHistory[NEXT_INDEX]) continue;
 
-        const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMoves[index]);
-        nextBoardPosition = currentGoHistory[index].makeMove(
+        const [moveColor, moveVertex] = turnGoMoveToBoardMove(
+          goMoves[NEXT_INDEX],
+          currentGoHistory[CURRENT]
+        );
+        nextBoardPosition = currentGoHistory[CURRENT].makeMove(
           moveColor,
           moveVertex,
           moveOptions
@@ -75,10 +91,10 @@ function AnalysisControls({
               {"<"}
             </Button>
             <Text
-              opacity={currentMove > FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
+              opacity={currentMove >= FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
               margin={1}
             >
-              {currentMove}/{goMoves.length}
+              {currentMove + ADJUST_FOR_ARRAY_INDEX}/{goMoves.length}
             </Text>
             <Button
               data-testid="forwardButton"

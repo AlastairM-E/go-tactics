@@ -44,6 +44,10 @@ const activeStyles = {
 };
 
 const MoveCell = ({ move, currentMove, playUpTo }: MoveCellProps) => {
+  const ADJUST_TO_ARRAY_INDEX = 1;
+  const moveNumber = move.number
+    ? move.number - ADJUST_TO_ARRAY_INDEX
+    : undefined;
   return (
     <>
       <Td border={tableBorderStyle}>{move.number ? move.number : ""}</Td>
@@ -51,8 +55,8 @@ const MoveCell = ({ move, currentMove, playUpTo }: MoveCellProps) => {
         _hover={hoverStyles}
         _active={activeStyles}
         border={tableBorderStyle}
-        style={currentMove === move.number ? activeStyles : undefined}
-        onClick={() => (move.number ? playUpTo(move.number) : undefined)}
+        style={currentMove === moveNumber ? activeStyles : undefined}
+        onClick={() => (moveNumber ? playUpTo(moveNumber) : undefined)}
         data-testid={move.number ? `tableMove${move.number}` : undefined}
       >
         {move.coordinates}

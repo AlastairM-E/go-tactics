@@ -115,7 +115,7 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
         {goGamesStored
           ? goGamesStored.sort(byKeyLength).map(([key, goGames]) => {
               return (
-                <>
+                <React.Fragment key={`${key}-${String(goGames.length)}`}>
                   <Table>
                     <Thead>
                       <Tr>
@@ -167,7 +167,7 @@ function GameFileExplorer({ setupGoBoard, clearBoard }: GameExplorerProps) {
                       })}
                     </Tbody>
                   </Table>
-                </>
+                </React.Fragment>
               );
             })
           : undefined}

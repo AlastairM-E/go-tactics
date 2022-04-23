@@ -17,6 +17,7 @@ import moveSound from "../audio/placeStone.mp3";
 import GameFileExplorer from "../components/GameFileExplorer";
 import { createGoBoard, moveOptions, turnGoMoveToBoardMove } from "../helper";
 import AnalysisControls from "../components/AnalysisControls";
+import goBoardReducer from "./goBoardReducer";
 
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
@@ -78,20 +79,54 @@ function IndexPage() {
 
   /* GO BOARD REDUCER - setupGoBoard */
   const setupGoBoard = (nextGoGame: GoGameInterface): void => {
-    const newInitGoGame = createGoBoard(nextGoGame.boardXSize);
-    const initGoBoard = new Board(newInitGoGame);
+    // new setupGoBoard
+    const initialState = {
+      goGame,
+      goBoard,
+      goHistory,
+      currentMove,
+      userPlayer,
+    };
 
-    const [moveColor, moveVertex] = turnGoMoveToBoardMove(
-      nextGoGame.moves[FIRST_MOVE],
-      initGoBoard
-    );
-    const newGoBoard = initGoBoard.makeMove(moveColor, moveVertex, moveOptions);
+    const {
+      goGame: nextGoGameToSetup,
+      goBoard: nextGoBoard,
+      goHistory: nextGoHistory,
+      currentMove: nextCurrentMove,
+      userPlayer: nextUserPlayer,
+    } = goBoardReducer(initialState, {
+      type: "SETUP_BOARD",
+      payload: nextGoGame,
+    });
 
-    setGoGame(nextGoGame);
-    setCurrentMove(FIRST_MOVE);
+    console.log("SETUP_BOARD", {
+      nextGoGameToSetup,
+      nextGoBoard,
+      nextGoHistory,
+      nextCurrentMove,
+      nextUserPlayer,
+    });
 
-    setGoBoard(newGoBoard);
-    setGoHistory([newGoBoard]);
+    setGoGame(nextGoGameToSetup);
+    setCurrentMove(nextCurrentMove);
+    setGoBoard(nextGoBoard);
+    setGoHistory(nextGoHistory);
+    setUserPlayer(nextUserPlayer);
+
+    // old setupGoBoard
+    // const newInitGoGame = createGoBoard(nextGoGame.boardXSize);
+    // const initGoBoard = new Board(newInitGoGame);
+
+    // const [moveColor, moveVertex] = turnGoMoveToBoardMove(
+    //   nextGoGame.moves[FIRST_MOVE],
+    //   initGoBoard
+    // );
+    // const newGoBoard = initGoBoard.makeMove(moveColor, moveVertex, moveOptions);
+
+    // setGoGame(nextGoGame);
+    // setCurrentMove(FIRST_MOVE);
+    // setGoBoard(newGoBoard);
+    // setGoHistory([newGoBoard]);
   };
 
   const clearBoard = () => setupGoBoard(newGoGame);

@@ -1,135 +1,196 @@
 # Defect
 
-- When the last move is clicked for the 13x13 go game, it does not seem to go to the last move.
+- Pass test has reduced from 14/15 to 10/15.
+- (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
+- Timed out retrying after 4000ms: Expected to find element: [data-testid="fileUploader"], but never found it.
+- [data-testClassName="19x19Games"] : expected undefined to have a length of 2 but got 0.
 
 ## Reproduce
 
-- Test produce the error, I need to check elsewhere.
-- LOok at fixtures to confirm the issue.
-- The first mvoe does not render, whilst is that.
-- Specifically, it is missing the first move.
+- Check that the issue is caused from the refactor I did regarding the goBoardReducer.ts.
+  - I can confirm that issue is caused by the refactor.
 
-## Gather
+### (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
 
-- I have spotted that whent eh first move is rendered, nothing happens unless you click the stored Game moves 2 times.
-- clear all boards and start with the 13x13 one. The 9x9 board is fine for some reason. Look at the goHistory, state and co before and after the load. Record those values. THis is to determine if the issue before the GoGame table or after. Then I can try to find what is casuing the issue.
+- 13x13 fixtures, when uploaded, that setup did not work.
+- See to reproduce on main site. Be precise with the exact 13x13 baord in the fixtures tab.
+- COnfirm it works or not: DOes not seem to , though I need to repleicate the environment better, since it is a consistent problem.
 
-ALso look for any error in the development console. Relay them back.
+This one error caused the other to be unaccessible, since screen went blank.
+I should fix the key props error though in GameFIleExplorer before continuing, as it may fix the error and should be fixed anyway.
 
-```
-Uncaught (in promise) TypeError: _ref is not iterable
-    at turnGoMoveToBoardMove (index.tsx:97:1)
-    at setupGoBoard (index.tsx:76:1)
-    at clearBoard (index.tsx:92:1)
-    at deleteGoGameFromDb (GameFileExplorer.tsx:102:1)
-```
+Key addition effected nothing.
 
-Before 13 x13 game is uploaded:
+However, I can know confirm the steps to reproduce:
 
-- goGame: newGoGame.
-- goBoard: (blank 9x9 board).
-- goHistory: [(blank 9x9 board)] (length of array is 1).
-- currentMove: 0.
+- clear all data from the app (go Game files).
+- first add a 9x9 go game file to the app.
+- press the last item on the move table.
+- second, add a 13x13 go game file to the app.
 
-No errors.
+The result should be the can't getCaptures error to be undefined.
 
-After 13 x13 game is uploaded:
+**Error has been reproduced.**
 
-- goGame: 13x13 MalmoBudapest game..
-- goBoard: (blank 13x13 board).
-- goHistory: [(blank 13x13 board)] (length of array is 1).
-- currentMove: 0.
+### Gather
 
-Errors: React does not recognize the `data-testClassName` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `data-testclassname` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+Reproduce again and analyse the error and where it comes from.
 
-WHy is the goBOard blank?
+- Aim is understand what causes the error and so I can start to debug that.
 
-In the setup GoBoard section, the new Board(initXYZ) is called. I want to research the new keyword, as it would point that if the goBoard is the fulty part, the problem gomes from the newGobard variable, sinc ethat create the new board. Look up the new keyword on mdn to find out more and see if there is a decent argument to be made. THink there might be something, look at the docs in sabaki go board before making a decision.
-
-## Hypothesis
-
-- The goBoard is returning the non makeMOve baord rather than the new one. This may be becaus eht e new keyword returns a new instance of an object (in htis case the goBoard constructor). However, the makeMove also returns a new instance.
-
-Due to something inside the api, this means the board instance is the old one rather than the new one.
-This is not strong, but it should be explored to confirm that it is incorrect. In addition, it is none breaking change (more of a refactor really), so if it is wrong, it will rule out th eissu ebeing with the newGoBoard variable regarding this situation.
-
-If I am right, given the lack of proof and testing on MDN I have done, it will make no difference and the first move will still error.
-If I am wrong, then the issue will be fixed. The issue could still be in the newGoBoard.
-
-### Test
-
-Run the initGOboard (from the initGoSKeletonBoard) and newGoBoard ebign the .makeMove one.
-Record if it passes or not.
-
-The test failed, I was right:
-
-- initGoBoard: (blank 13x13 GoBoard).
-- newGoBoard: (blank 13x13 GoBoard).
-
-Errors: None.
-
-If the initGoBoard.makeMove returns the same blank board as teh newGoBoard, that should means the moves or function which is passed into it are producing the incorrect result.
-
-I do know that the makeMove function is causing the sympto, fault here. How it is, I don't know.
-
-## Gather
-
-Log what is being passed into the makeMove function and response back. If there is a clear fault, then I need to investigate that and this seems to be where the error is starting.
-
-- initGoBoard: (blank 13x13 Board).
-- newGoBoard: (blank 13x13 Board).
-- firstMove: ['B', 'K4'].
-- moveColor: 1 = BLACK_STONE
-- moveVertex: [-1, -1] = error in translation.
-- moveOptions: moveOPtions
-
-Any errors:
+Analysis controls are the first layer.
+The effected code is:
 
 ```
-React does not recognize the `data-testClassName` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `data-testclassname` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
-```
-
-Since there is in error in the moveVertex --> this means that I need to look into the problem inside the turnGoMoveToBoardMove function.
-
-I need to use breakpoint to understand exactly what is going on it this function. ONce I do, then I can log my findings here and if they point to an issue, I can hypothesis.
-
-```
-  const turnGoMoveToBoardMove = ([stoneColor, coordinates]: GoMove): [
-    Sign,
-    Vertex
-  ] => {
-    const moveColor = stoneColor === "B" ? BLACK_STONE : WHITE_STONE;
-    const moveVertex = goBoard.parseVertex(coordinates);
-
-    return [moveColor, moveVertex];
+  const captures = {
+    blackStones: goHistory[currentMove].getCaptures(BLACK_STONE), // error occurs on this line
+    whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
   };
 ```
 
-Look into:
+I need to breakpoint that piece of code to understand what each value is pointing to.
 
-- stoneColor: "B".
-- coordinates: "K4".
-- moveColor: 1.
-- moveVertex: [-1, -1].
-- goBoard: (blank 9x9 go board).
+- If I know that, then I can start to think about what the problem might be.
 
-With the goBoard being a blank 9x9 go board, I can hypothesis.
+Record 9x9 currentMove, goHistory and captures for black and white stones.
+Record 13x13 currentMove, goHistory and captures for black and white stones.
 
-## Hypothesis - it is the goBoard parseVertex
+#### 9x9
 
-Note: issue around past goGame moves being passed into translateGoMove?.
+- currentMove: 0.
+- goHistory: [(9x9-board)].
+- Black stone captures: unknown.
+- White stone captures: unknown.
 
-The goBoard (state) is beign used to parseVertexes in turnGoMoveToBoardMove. This is the current go board (not future to be setup go board). This is can be 9x9 when the setup go board in 13x13 for example. This means that when the person setup up the new board, they need to make a more. However, in 13x13 boards, the coordinate will be passed differently than in a 9x9 board, as a move in the 44 corner of a 13x13 board, may not exist on a 9x9 one, simply because it is a 9x9 baord odes not have room.
+#### 13x13
 
-If I am right and this is th eissue, If I pass in the newGoBoard to be and have that parse the moves, then it wil parse the correct moves e.g. for a 13x13 board rather than a 9x9 board for example, and thus this will be correctly done. Repeat for all errors this is a problem.
+- currentMove: 0.
+- goHistory: [(9x9-board)].
+- Black stone captures: unknown.
+- White stone captures: unknown.
 
-If I am wrong, the same will remain.
+- currentMove: 0.
+- goHistory: [(13x13-board)].
+- Black stone captures: unknown.
+- White stone captures: unknown.
 
-### Test
+In this case, it did work, what was that all about.
+If I can't get the output in that context, I will use console.log logs with a counter.
 
-- Reload app to default 9x9.
-- Click 13x13 saved game.
+This way I can know how many times the re-render occurred and what point the original error occured.
+I am choosign this over the debug, due to the re-renders. It should give me a snapshot of what is happening.
+Therefore, giving me the necessary data to work out the problem.
 
-Should see first move. Yes.
+#### Reproduction steps
 
-Integration suite full run: 14 pass 1 fail.
+- clear all data from the app (go Game files).
+- first add a 9x9 go game file to the app.
+- press the last item on the move table.
+- second, add a 13x13 go game file to the app.
+
+#### 9x9
+
+- currentMove: 0.
+- goHistory: [(9x9-board)].
+- Black stone captures: 0.
+- White stone captures: 0.
+
+#### 9x9 after click on 42 last move
+
+- currentMove: 41.
+- goHistory: [(9x9-board) * 42] .
+- Black stone captures: 2.
+- White stone captures: 0.
+
+#### 13x13
+
+- currentMove: 41.
+- goHistory: [(13x13-board)].
+- Black stone captures: error.
+- White stone captures: .
+
+I know what the shallow cause is:
+
+- The goHistory has been updated to the 13x13 board, but currentMove has not updated from it's previous currentMove of 41.
+- This causes a discreptency between the 2, which leads to an length goHistory array being asked for the 41 item in the index.
+- That returneds udenfined, which means non of the original method around getCaptures works anymore.
+
+What is the root cause though?
+
+I know that the change in values was caused by the refactor the recent reducer.
+
+- Should console.log the values returned from that reducer.
+- I should do this since that change led to the test failing.
+- Therefore, I should check how the setup board is working and to gather more info.
+
+Logs from setupBoard refeactor (return from the reducer function --> calling 'SETUP_BOARD' action).
+
+- nextCurrentMove: 0
+- nextGoBoard: GoBoard {signMap: Array(13), height: 13, width: 13, \_players: Array(2), \_captures: Array(2), …}
+- nextGoGameToSetup: {id: '0I_get_a_bit_bored-vs.-MalmöBudapest', gameName: 'I_get_a_bit_bored vs. MalmöBudapest', initialStones: Array(0), moves: Array(111), rules: 'Japanese', …}
+- nextGoHistory: [GoBoard {signMap: Array(13), height: 13, width: 13, _players: Array(2), _captur...}]
+- nextUserPlayer: -1
+
+SInce nextCurrentMove and nextGoHistory are the values they should be:
+
+_I think the issue might be due to the ordering of the setStates_
+
+In the previous setup board function, the order of setState was like so:
+
+```
+  setGoGame(nextGoGame);
+  setCurrentMove(FIRST_MOVE);
+  setGoBoard(newGoBoard);
+  setGoHistory([newGoBoard]);
+```
+
+However, in the current set of setStates, it is like this:
+
+```
+  setGoGame(nextGoGameToSetup);
+  setGoBoard(nextGoBoard);
+  setGoHistory(nextGoHistory);
+  setCurrentMove(nextCurrentMove);
+  setUserPlayer(nextUserPlayer);
+```
+
+I think since there is a discrepency between the currentMove being the past goHistory value (not being updated)
+and the goHistory beign update to date. It could be the nextGoHistory is updated, and ran in the AnalysisControls
+with the not update to date currentMove, leading to this issue.
+
+However, there are multiple re-renders of the Analysis Controls and currently I don't know of those updates are.
+Therefore, I need to gather that information before jumping ot any conclusions.
+
+I noted down the above so I did not forget it, but it could be incorrect if the order of the state has the currentMove state
+rendered before the rest (for example). This will be done by putting console.log above each setState in setupBoard function.
+This means I can identifiy which part of state re-renders each log in AnalysisControls refers to.
+
+Note order of state, from AnalysisControls state logs, finding the ordering of the state rendering:
+
+- SetState 0 {nextGoGameToSetup: {…}}
+  - AnalysisControls.tsx:38 17 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
+  - AnalysisControls.tsx:38 19 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
+- index.tsx:112 SetState 1 {nextGoBoard: GoBoard}
+  - AnalysisControls.tsx:38 21 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
+- index.tsx:114 SetState 2 {nextGoHistory: Array(1)}
+  - AnalysisControls.tsx:38 23 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
+  - AnalysisControls.tsx:38 24 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
+
+Look into how the the re-render could occur in the AnalysisControls. Checking to see if props are 2 renders and no props are 1.
+
+- goGame (props inisde AnalaysisControls) - 2 renders.
+- goBoard (no props inside Analysis Controls) - 1 render.
+- goHistory (props inside AnalysisControls) - 2 renders.
+
+### Hypothesis
+
+I hypothesis that because of the ordering of setState, goHistory cleared, but th ecurrentMove is not. THis would mean that if the current move is higher than zero, then a bug would occur, sinc eyou are calling an item which does not exist on an array, returning undefined, which would cause an error when trying call a method from undefined.
+
+If I am right, then rejigging ht eorder so that currentMove was second to the top should fix the error and cause all the test to pass (simialr orderign to previous setupBoard). If I am wrong, then the test will continue to fail.
+
+#### Test
+
+- Confirm current test passing ration: 5X 10\_/.
+- After change: 1X 14\_/ - ok, as I know what that one X is.
+
+- Reproduce defect - does pass or fail: PASS.

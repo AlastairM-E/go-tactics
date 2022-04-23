@@ -2,10 +2,12 @@ import GoBoard, { Sign } from "@sabaki/go-board";
 import { createGoBoard, moveOptions, turnGoMoveToBoardMove } from "../helper";
 import { goBoardState, GoGameInterface, GoMove } from "../main";
 
-type Action = {
+interface SetupBoardInterface {
   type: "SETUP_BOARD";
   payload: GoGameInterface;
-};
+}
+
+type Action = SetupBoardInterface;
 
 const FIRST_MOVE = 0;
 const BLACK_STONE: Sign = 1;

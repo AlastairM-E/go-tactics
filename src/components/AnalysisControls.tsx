@@ -23,6 +23,8 @@ const NOT_VISIBLE = 0;
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
 
+let counter = 0;
+
 function AnalysisControls({
   goMoves,
   playBoardPosition,
@@ -32,6 +34,12 @@ function AnalysisControls({
 }: AnalysisControlsProps) {
   const [currentMove, setCurrentMove] = currentMoveState;
   const [goHistory, setGoHistory] = goHistoryState;
+
+  console.log((counter += 1), {
+    currentMove,
+    goHistory,
+    currrentBoard: goHistory[currentMove],
+  });
   const captures = {
     blackStones: goHistory[currentMove].getCaptures(BLACK_STONE),
     whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),

@@ -1,196 +1,249 @@
 # Defect
 
-- Pass test has reduced from 14/15 to 10/15.
-- (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
-- Timed out retrying after 4000ms: Expected to find element: [data-testid="fileUploader"], but never found it.
-- [data-testClassName="19x19Games"] : expected undefined to have a length of 2 but got 0.
+- When a user starts a game from a blank one, when they click to go back the first time, nothing changes, despite there being more than 1 move.
 
 ## Reproduce
 
-- Check that the issue is caused from the refactor I did regarding the goBoardReducer.ts.
-  - I can confirm that issue is caused by the refactor.
+- Delete any stored games, refresh the page.
+- Click on the blank 9 x 9 go board, on all 4 corners.
+- press the back button.
 
-### (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
+- expect: 3 stones.
+- Receive: 4 stones.
 
-- 13x13 fixtures, when uploaded, that setup did not work.
-- See to reproduce on main site. Be precise with the exact 13x13 baord in the fixtures tab.
-- COnfirm it works or not: DOes not seem to , though I need to repleicate the environment better, since it is a consistent problem.
+- Confirm: Yes.
 
-This one error caused the other to be unaccessible, since screen went blank.
-I should fix the key props error though in GameFIleExplorer before continuing, as it may fix the error and should be fixed anyway.
+## Gather
 
-Key addition effected nothing.
+- since it occurs with the back button, I can assume it is an issue with the playUpTo Button.
+- I should record the inputs and any expected occurances, so I can confirm what is going on inside the function.
+- I should gather:
 
-However, I can know confirm the steps to reproduce:
+  Init:
 
-- clear all data from the app (go Game files).
-- first add a 9x9 go game file to the app.
-- press the last item on the move table.
-- second, add a 13x13 go game file to the app.
+  - moveNumber.
+  - goHistory.
+  - goHistory[moveNumber].
+  - currentMove.
 
-The result should be the can't getCaptures error to be undefined.
+  Mannual run through goMoves:
 
-**Error has been reproduced.**
+  - nextBoardPosition.
+  - CURRENT
 
-### Gather
+---
 
-Reproduce again and analyse the error and where it comes from.
+Log out 1
 
-- Aim is understand what causes the error and so I can start to debug that.
+Init:
 
-Analysis controls are the first layer.
-The effected code is:
+- moveNumber: 3.
+- goHistory: [goBoard * 4 (4th being 1, 1, -1, -1)].
+- goHistory[moveNumber] (1, 1, -1, -1)).
+- currentMove: 4.
 
-```
-  const captures = {
-    blackStones: goHistory[currentMove].getCaptures(BLACK_STONE), // error occurs on this line
-    whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
-  };
-```
+Mannual run through goMoves:
 
-I need to breakpoint that piece of code to understand what each value is pointing to.
+- nextBoardPosition: (did not run).
+- CURRENT: (did not run).
 
-- If I know that, then I can start to think about what the problem might be.
+CUrrent move is 4.
+Since it can only occur from add move, sicn eth at is the place which currentMove changes, I looked there.
+I saw this piece of code. UpdatedGoMove.length = 4 if the previous were 3. The add the 1 would be equal to 4.
+However, removal of goHistory that ould bumped up the goHistory, would be th eissue I think.
 
-Record 9x9 currentMove, goHistory and captures for black and white stones.
-Record 13x13 currentMove, goHistory and captures for black and white stones.
+Spotted this in the addMoveToGoGame:
+` setCurrentMove(updatedMoves.length);`
 
-#### 9x9
+I will write a hypothesis.
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+## Hypothesis
 
-#### 13x13
+- The reason why this issue occured is due to updatedMoves.length not beign tailored to an array length.
+- Previously this code was fine because when you had a blank GoGame, the goHistory was bumped by 1 (the initial version).
+- There when you had a bumped currentMove of 4 - playUpTo would be sent 3. That is the fourth value of the array, so would cause trouble (as currentMove is 4 --> fourth move is on the board), but with an array of 5 [blanl, goBoard * 4], the 3 idnex item is acutally the 3rd move, even though it is the foruth item of the array.
+- However, with that gone, it the currentMove is 4, playUpTo take 3 --> the 3 indexed item in the goHistory array is the fourth move (with currentMove beign 4 --> current baord state is fourth move in the game), showing that nothign has happened.
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+If I am right, then if I have -1 to the updatedMoves.length, this will fix the issue and return a 14 x1 in the cypress tests. If I am wrong, something else will go wrong.
 
-- currentMove: 0.
-- goHistory: [(13x13-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+## Test
 
-In this case, it did work, what was that all about.
-If I can't get the output in that context, I will use console.log logs with a counter.
+- is issue fixed when reproduce by steps above: FAIL.
 
-This way I can know how many times the re-render occurred and what point the original error occured.
-I am choosign this over the debug, due to the re-renders. It should give me a snapshot of what is happening.
-Therefore, giving me the necessary data to work out the problem.
+Explore in more depth.
 
-#### Reproduction steps
+## Reproduce - fix now does not work
 
-- clear all data from the app (go Game files).
-- first add a 9x9 go game file to the app.
-- press the last item on the move table.
-- second, add a 13x13 go game file to the app.
+Same reproduce
 
-#### 9x9
+- Delete any stored games, refresh the page.
+- Try to click on the blank 9 x 9 go board, on all 4 corners.
+- Once you get to the second white stone, the error occurs.
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: 0.
-- White stone captures: 0.
+- Confirm reproduction: Yes.
 
-#### 9x9 after click on 42 last move
+## Gather
 
-- currentMove: 41.
-- goHistory: [(9x9-board) * 42] .
-- Black stone captures: 2.
-- White stone captures: 0.
-
-#### 13x13
-
-- currentMove: 41.
-- goHistory: [(13x13-board)].
-- Black stone captures: error.
-- White stone captures: .
-
-I know what the shallow cause is:
-
-- The goHistory has been updated to the 13x13 board, but currentMove has not updated from it's previous currentMove of 41.
-- This causes a discreptency between the 2, which leads to an length goHistory array being asked for the 41 item in the index.
-- That returneds udenfined, which means non of the original method around getCaptures works anymore.
-
-What is the root cause though?
-
-I know that the change in values was caused by the refactor the recent reducer.
-
-- Should console.log the values returned from that reducer.
-- I should do this since that change led to the test failing.
-- Therefore, I should check how the setup board is working and to gather more info.
-
-Logs from setupBoard refeactor (return from the reducer function --> calling 'SETUP_BOARD' action).
-
-- nextCurrentMove: 0
-- nextGoBoard: GoBoard {signMap: Array(13), height: 13, width: 13, \_players: Array(2), \_captures: Array(2), …}
-- nextGoGameToSetup: {id: '0I_get_a_bit_bored-vs.-MalmöBudapest', gameName: 'I_get_a_bit_bored vs. MalmöBudapest', initialStones: Array(0), moves: Array(111), rules: 'Japanese', …}
-- nextGoHistory: [GoBoard {signMap: Array(13), height: 13, width: 13, _players: Array(2), _captur...}]
-- nextUserPlayer: -1
-
-SInce nextCurrentMove and nextGoHistory are the values they should be:
-
-_I think the issue might be due to the ordering of the setStates_
-
-In the previous setup board function, the order of setState was like so:
+Error:
 
 ```
-  setGoGame(nextGoGame);
-  setCurrentMove(FIRST_MOVE);
-  setGoBoard(newGoBoard);
-  setGoHistory([newGoBoard]);
+MoveTable.tsx:93
+
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+    at renderWithHooks (react-dom.development.js:14985:1)
+    at mountIndeterminateComponent (react-dom.development.js:17811:1)
+    at beginWork (react-dom.development.js:19049:1)
+    at HTMLUnknownElement.callCallback (react-dom.development.js:3945:1)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:3994:1)
+    at invokeGuardedCallback (react-dom.development.js:4056:1)
+(anonymous) @ MoveTable.tsx:93
+createMovePairs @ MoveTable.tsx:77
+MoveTable @ MoveTable.tsx:127
+renderWithHooks @ react-dom.development.js:14985
+mountIndeterminateComponent @ react-dom.development.js:17811
+beginWork @ react-dom.development.js:19049
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+beginWork$1 @ react-dom.development.js:23964
+performUnitOfWork @ react-dom.development.js:22776
+workLoopSync @ react-dom.development.js:22707
+renderRootSync @ react-dom.development.js:22670
+performSyncWorkOnRoot @ react-dom.development.js:22293
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
+react_devtools_backend.js:3973
+
+       The above error occurred in the <MoveTable> component:
+
+    at MoveTable (http://localhost:3000/static/js/bundle.js:651:5)
+    at MoveTable
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13308:94
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13482:20
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13436:20
+    at EnvironmentProvider (http://localhost:3000/static/js/bundle.js:20259:24)
+    at ColorModeProvider (http://localhost:3000/static/js/bundle.js:8512:21)
+    at ThemeProvider (http://localhost:3000/static/js/bundle.js:37649:64)
+    at ThemeProvider (http://localhost:3000/static/js/bundle.js:25643:27)
+    at http://localhost:3000/static/js/bundle.js:10782:23
+    at ChakraProvider (http://localhost:3000/static/js/bundle.js:19557:24)
+    at IndexPage (http://localhost:3000/static/js/bundle.js:1428:80)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ react_devtools_backend.js:3973
+logCapturedError @ react-dom.development.js:20085
+update.callback @ react-dom.development.js:20118
+callCallback @ react-dom.development.js:12318
+commitUpdateQueue @ react-dom.development.js:12339
+commitLifeCycles @ react-dom.development.js:20736
+commitLayoutEffects @ react-dom.development.js:23426
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+commitRootImpl @ react-dom.development.js:23151
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+commitRoot @ react-dom.development.js:22990
+performSyncWorkOnRoot @ react-dom.development.js:22329
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
+MoveTable.tsx:93
+
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+    at renderWithHooks (react-dom.development.js:14985:1)
+    at mountIndeterminateComponent (react-dom.development.js:17811:1)
+    at beginWork (react-dom.development.js:19049:1)
+    at HTMLUnknownElement.callCallback (react-dom.development.js:3945:1)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:3994:1)
+    at invokeGuardedCallback (react-dom.development.js:4056:1)
+(anonymous) @ MoveTable.tsx:93
+createMovePairs @ MoveTable.tsx:77
+MoveTable @ MoveTable.tsx:127
+renderWithHooks @ react-dom.development.js:14985
+mountIndeterminateComponent @ react-dom.development.js:17811
+beginWork @ react-dom.development.js:19049
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+beginWork$1 @ react-dom.development.js:23964
+performUnitOfWork @ react-dom.development.js:22776
+workLoopSync @ react-dom.development.js:22707
+renderRootSync @ react-dom.development.js:22670
+performSyncWorkOnRoot @ react-dom.development.js:22293
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
 ```
 
-However, in the current set of setStates, it is like this:
+I can presume this issue is here from the error:
+MoveTable.tsx:93
 
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+
+I should read the code from there and try to figure out what more information I need to fix the problem.
+
+Issue was triggered from this function
+
+```javascript=
+const separatedGoMoves: TableMove[][] = [];
+
+    goMoves.forEach(([stoneColor, coordinates], index) => {
+      const DECREMENT_TO_GET_MOVE_INTO_PAIR = 1;
+      const MOVE_NUMBER_ADJUSTMENT = 1;
+      const LATEST_MOVE_PAIR =
+        separatedGoMoves.length - DECREMENT_TO_GET_MOVE_INTO_PAIR;
+
+      const tableCoordinates: TableMove = {
+        number: index + MOVE_NUMBER_ADJUSTMENT,
+        coordinates: coordinates !== PASS ? coordinates : "Pass",
+      };
+
+      if (stoneColor === "B") {
+        separatedGoMoves.push([tableCoordinates]);
+      }
+
+      if (stoneColor === "W") {
+        separatedGoMoves[LATEST_MOVE_PAIR].push(tableCoordinates);
+      }
+    });
 ```
-  setGoGame(nextGoGameToSetup);
-  setGoBoard(nextGoBoard);
-  setGoHistory(nextGoHistory);
-  setCurrentMove(nextCurrentMove);
-  setUserPlayer(nextUserPlayer);
-```
 
-I think since there is a discrepency between the currentMove being the past goHistory value (not being updated)
-and the goHistory beign update to date. It could be the nextGoHistory is updated, and ran in the AnalysisControls
-with the not update to date currentMove, leading to this issue.
+This occured because we change the addMoveToGoGame function. This changed the currentMove, so I should look at how that coudl effect the control. I should look at the function wider before deciding how I want to tackle the issue.
 
-However, there are multiple re-renders of the Analysis Controls and currently I don't know of those updates are.
-Therefore, I need to gather that information before jumping ot any conclusions.
-
-I noted down the above so I did not forget it, but it could be incorrect if the order of the state has the currentMove state
-rendered before the rest (for example). This will be done by putting console.log above each setState in setupBoard function.
-This means I can identifiy which part of state re-renders each log in AnalysisControls refers to.
-
-Note order of state, from AnalysisControls state logs, finding the ordering of the state rendering:
-
-- SetState 0 {nextGoGameToSetup: {…}}
-  - AnalysisControls.tsx:38 17 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-  - AnalysisControls.tsx:38 19 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-- index.tsx:112 SetState 1 {nextGoBoard: GoBoard}
-  - AnalysisControls.tsx:38 21 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-- index.tsx:114 SetState 2 {nextGoHistory: Array(1)}
-  - AnalysisControls.tsx:38 23 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
-  - AnalysisControls.tsx:38 24 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
-
-Look into how the the re-render could occur in the AnalysisControls. Checking to see if props are 2 renders and no props are 1.
-
-- goGame (props inisde AnalaysisControls) - 2 renders.
-- goBoard (no props inside Analysis Controls) - 1 render.
-- goHistory (props inside AnalysisControls) - 2 renders.
-
-### Hypothesis
-
-I hypothesis that because of the ordering of setState, goHistory cleared, but th ecurrentMove is not. THis would mean that if the current move is higher than zero, then a bug would occur, sinc eyou are calling an item which does not exist on an array, returning undefined, which would cause an error when trying call a method from undefined.
-
-If I am right, then rejigging ht eorder so that currentMove was second to the top should fix the error and cause all the test to pass (simialr orderign to previous setupBoard). If I am wrong, then the test will continue to fail.
-
-#### Test
-
-- Confirm current test passing ration: 5X 10\_/.
-- After change: 1X 14\_/ - ok, as I know what that one X is.
-
-- Reproduce defect - does pass or fail: PASS.
+I should commit my work before conitnuing.

@@ -53,7 +53,7 @@ function IndexPage() {
   const [goBoard, setGoBoard] = useState(new Board(initGoBoard)); // cleared
   const [goGame, setGoGame] = useState(newGoGame); // cleared
   const [currentMove, setCurrentMove] = useState(FIRST_MOVE); // cleared
-  const [goHistory, setGoHistory] = useState([goBoard]); // cleared
+  const [goHistory, setGoHistory]: [Board[] | never[], any] = useState([]); // cleared
   const [userPlayer, setUserPlayer] = useState(BLACK_STONE); // cleared
 
   const [gameErrorMessage, setGameErrorMessage] = useState("");
@@ -133,6 +133,7 @@ function IndexPage() {
 
   /* GO BOARD REDUCER - addMoveToGoGame */
   const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
+    const ARRAY_ADJUST = 1;
     const byOnlyPastMoves = (move: GoMove, index: number) => {
       return index < currentMove;
     };
@@ -149,7 +150,7 @@ function IndexPage() {
 
     setGoGame(updatedGoGame);
     setGoHistory(updatedGoHistory);
-    setCurrentMove(updatedMoves.length);
+    setCurrentMove(updatedMoves.length - ARRAY_ADJUST);
 
     return updatedGoGame;
   };

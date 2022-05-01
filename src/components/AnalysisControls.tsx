@@ -23,8 +23,6 @@ const NOT_VISIBLE = 0;
 const BLACK_STONE: Sign = 1;
 const WHITE_STONE: Sign = -1;
 
-let counter = 0;
-
 function AnalysisControls({
   goMoves,
   playBoardPosition,
@@ -35,18 +33,20 @@ function AnalysisControls({
   const [currentMove, setCurrentMove] = currentMoveState;
   const [goHistory, setGoHistory] = goHistoryState;
 
-  console.log((counter += 1), {
-    currentMove,
-    goHistory,
-    currrentBoard: goHistory[currentMove],
-  });
   const captures = {
-    blackStones: goHistory[currentMove].getCaptures(BLACK_STONE),
-    whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
+    blackStones: goHistory[currentMove]?.getCaptures(BLACK_STONE),
+    whiteStones: goHistory[currentMove]?.getCaptures(WHITE_STONE),
   };
 
   /* GO BOARD REDUCER - playUpTo */
   const playUpTo = (moveNumber: number) => {
+    console.log(0, {
+      moveNumber,
+      goHistory,
+      goHistoryMoveNumber: goHistory[moveNumber],
+      currentMove,
+    });
+
     if (moveNumber > goMoves.length) return undefined;
     if (goHistory[moveNumber]) {
       playBoardPosition(goHistory[moveNumber]);
@@ -69,6 +69,8 @@ function AnalysisControls({
           moveOptions
         );
         currentGoHistory[NEXT_INDEX] = nextBoardPosition;
+
+        console.log(1, { CURRENT, nextBoardPosition });
       }
 
       setGoHistory(currentGoHistory);

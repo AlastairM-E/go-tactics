@@ -1,196 +1,496 @@
 # Defect
 
-- Pass test has reduced from 14/15 to 10/15.
-- (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
-- Timed out retrying after 4000ms: Expected to find element: [data-testid="fileUploader"], but never found it.
-- [data-testClassName="19x19Games"] : expected undefined to have a length of 2 but got 0.
+- When a user starts a game from a blank one, when they click to go back the first time, nothing changes, despite there being more than 1 move.
 
 ## Reproduce
 
-- Check that the issue is caused from the refactor I did regarding the goBoardReducer.ts.
-  - I can confirm that issue is caused by the refactor.
+- Delete any stored games, refresh the page.
+- Click on the blank 9 x 9 go board, on all 4 corners.
+- press the back button.
 
-### (uncaught exception) TypeError: Cannot read properties of undefined (reading 'getCaptures').
+- expect: 3 stones.
+- Receive: 4 stones.
 
-- 13x13 fixtures, when uploaded, that setup did not work.
-- See to reproduce on main site. Be precise with the exact 13x13 baord in the fixtures tab.
-- COnfirm it works or not: DOes not seem to , though I need to repleicate the environment better, since it is a consistent problem.
+- Confirm: Yes.
 
-This one error caused the other to be unaccessible, since screen went blank.
-I should fix the key props error though in GameFIleExplorer before continuing, as it may fix the error and should be fixed anyway.
+## Gather
 
-Key addition effected nothing.
+- since it occurs with the back button, I can assume it is an issue with the playUpTo Button.
+- I should record the inputs and any expected occurances, so I can confirm what is going on inside the function.
+- I should gather:
 
-However, I can know confirm the steps to reproduce:
+  Init:
 
-- clear all data from the app (go Game files).
-- first add a 9x9 go game file to the app.
-- press the last item on the move table.
-- second, add a 13x13 go game file to the app.
+  - moveNumber.
+  - goHistory.
+  - goHistory[moveNumber].
+  - currentMove.
 
-The result should be the can't getCaptures error to be undefined.
+  Mannual run through goMoves:
 
-**Error has been reproduced.**
+  - nextBoardPosition.
+  - CURRENT
 
-### Gather
+---
 
-Reproduce again and analyse the error and where it comes from.
+Log out 1
 
-- Aim is understand what causes the error and so I can start to debug that.
+Init:
 
-Analysis controls are the first layer.
-The effected code is:
+- moveNumber: 3.
+- goHistory: [goBoard * 4 (4th being 1, 1, -1, -1)].
+- goHistory[moveNumber] (1, 1, -1, -1)).
+- currentMove: 4.
+
+Mannual run through goMoves:
+
+- nextBoardPosition: (did not run).
+- CURRENT: (did not run).
+
+CUrrent move is 4.
+Since it can only occur from add move, sicn eth at is the place which currentMove changes, I looked there.
+I saw this piece of code. UpdatedGoMove.length = 4 if the previous were 3. The add the 1 would be equal to 4.
+However, removal of goHistory that ould bumped up the goHistory, would be th eissue I think.
+
+Spotted this in the addMoveToGoGame:
+` setCurrentMove(updatedMoves.length);`
+
+I will write a hypothesis.
+
+## Hypothesis
+
+- The reason why this issue occured is due to updatedMoves.length not beign tailored to an array length.
+- Previously this code was fine because when you had a blank GoGame, the goHistory was bumped by 1 (the initial version).
+- There when you had a bumped currentMove of 4 - playUpTo would be sent 3. That is the fourth value of the array, so would cause trouble (as currentMove is 4 --> fourth move is on the board), but with an array of 5 [blanl, goBoard * 4], the 3 idnex item is acutally the 3rd move, even though it is the foruth item of the array.
+- However, with that gone, it the currentMove is 4, playUpTo take 3 --> the 3 indexed item in the goHistory array is the fourth move (with currentMove beign 4 --> current baord state is fourth move in the game), showing that nothign has happened.
+
+If I am right, then if I have -1 to the updatedMoves.length, this will fix the issue and return a 14 x1 in the cypress tests. If I am wrong, something else will go wrong.
+
+## Test
+
+- is issue fixed when reproduce by steps above: FAIL.
+
+Explore in more depth.
+
+## Reproduce - fix now does not work
+
+Same reproduce
+
+- Delete any stored games, refresh the page.
+- Try to click on the blank 9 x 9 go board, on all 4 corners.
+- Once you get to the second white stone, the error occurs.
+
+- Confirm reproduction: Yes.
+
+## Gather
+
+Error:
 
 ```
-  const captures = {
-    blackStones: goHistory[currentMove].getCaptures(BLACK_STONE), // error occurs on this line
-    whiteStones: goHistory[currentMove].getCaptures(WHITE_STONE),
+MoveTable.tsx:93
+
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+    at renderWithHooks (react-dom.development.js:14985:1)
+    at mountIndeterminateComponent (react-dom.development.js:17811:1)
+    at beginWork (react-dom.development.js:19049:1)
+    at HTMLUnknownElement.callCallback (react-dom.development.js:3945:1)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:3994:1)
+    at invokeGuardedCallback (react-dom.development.js:4056:1)
+(anonymous) @ MoveTable.tsx:93
+createMovePairs @ MoveTable.tsx:77
+MoveTable @ MoveTable.tsx:127
+renderWithHooks @ react-dom.development.js:14985
+mountIndeterminateComponent @ react-dom.development.js:17811
+beginWork @ react-dom.development.js:19049
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+beginWork$1 @ react-dom.development.js:23964
+performUnitOfWork @ react-dom.development.js:22776
+workLoopSync @ react-dom.development.js:22707
+renderRootSync @ react-dom.development.js:22670
+performSyncWorkOnRoot @ react-dom.development.js:22293
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
+react_devtools_backend.js:3973
+
+       The above error occurred in the <MoveTable> component:
+
+    at MoveTable (http://localhost:3000/static/js/bundle.js:651:5)
+    at MoveTable
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13308:94
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13482:20
+    at div
+    at http://localhost:3000/static/js/bundle.js:37609:66
+    at http://localhost:3000/static/js/bundle.js:13436:20
+    at EnvironmentProvider (http://localhost:3000/static/js/bundle.js:20259:24)
+    at ColorModeProvider (http://localhost:3000/static/js/bundle.js:8512:21)
+    at ThemeProvider (http://localhost:3000/static/js/bundle.js:37649:64)
+    at ThemeProvider (http://localhost:3000/static/js/bundle.js:25643:27)
+    at http://localhost:3000/static/js/bundle.js:10782:23
+    at ChakraProvider (http://localhost:3000/static/js/bundle.js:19557:24)
+    at IndexPage (http://localhost:3000/static/js/bundle.js:1428:80)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ react_devtools_backend.js:3973
+logCapturedError @ react-dom.development.js:20085
+update.callback @ react-dom.development.js:20118
+callCallback @ react-dom.development.js:12318
+commitUpdateQueue @ react-dom.development.js:12339
+commitLifeCycles @ react-dom.development.js:20736
+commitLayoutEffects @ react-dom.development.js:23426
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+commitRootImpl @ react-dom.development.js:23151
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+commitRoot @ react-dom.development.js:22990
+performSyncWorkOnRoot @ react-dom.development.js:22329
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
+MoveTable.tsx:93
+
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+    at renderWithHooks (react-dom.development.js:14985:1)
+    at mountIndeterminateComponent (react-dom.development.js:17811:1)
+    at beginWork (react-dom.development.js:19049:1)
+    at HTMLUnknownElement.callCallback (react-dom.development.js:3945:1)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:3994:1)
+    at invokeGuardedCallback (react-dom.development.js:4056:1)
+(anonymous) @ MoveTable.tsx:93
+createMovePairs @ MoveTable.tsx:77
+MoveTable @ MoveTable.tsx:127
+renderWithHooks @ react-dom.development.js:14985
+mountIndeterminateComponent @ react-dom.development.js:17811
+beginWork @ react-dom.development.js:19049
+callCallback @ react-dom.development.js:3945
+invokeGuardedCallbackDev @ react-dom.development.js:3994
+invokeGuardedCallback @ react-dom.development.js:4056
+beginWork$1 @ react-dom.development.js:23964
+performUnitOfWork @ react-dom.development.js:22776
+workLoopSync @ react-dom.development.js:22707
+renderRootSync @ react-dom.development.js:22670
+performSyncWorkOnRoot @ react-dom.development.js:22293
+(anonymous) @ react-dom.development.js:11327
+unstable_runWithPriority @ scheduler.development.js:468
+runWithPriority$1 @ react-dom.development.js:11276
+flushSyncCallbackQueueImpl @ react-dom.development.js:11322
+flushSyncCallbackQueue @ react-dom.development.js:11309
+discreteUpdates$1 @ react-dom.development.js:22420
+discreteUpdates @ react-dom.development.js:3756
+dispatchDiscreteEvent @ react-dom.development.js:5889
+```
+
+I can presume this issue is here from the error:
+MoveTable.tsx:93
+
+       Uncaught TypeError: Cannot read properties of undefined (reading 'push')
+    at MoveTable.tsx:93:1
+    at Array.forEach (<anonymous>)
+    at createMovePairs (MoveTable.tsx:77:1)
+    at MoveTable (MoveTable.tsx:127:1)
+
+I should read the code from there and try to figure out what more information I need to fix the problem.
+
+Issue was triggered from this function
+
+```javascript=
+const createMovePairs = () => {
+    const separatedGoMoves: TableMove[][] = [];
+
+    goMoves.forEach(([stoneColor, coordinates], index) => {
+      const DECREMENT_TO_GET_MOVE_INTO_PAIR = 1;
+      const MOVE_NUMBER_ADJUSTMENT = 1;
+      const LATEST_MOVE_PAIR =
+        separatedGoMoves.length - DECREMENT_TO_GET_MOVE_INTO_PAIR;
+
+      const tableCoordinates: TableMove = {
+        number: index + MOVE_NUMBER_ADJUSTMENT,
+        coordinates: coordinates !== PASS ? coordinates : "Pass",
+      };
+
+      if (stoneColor === "B") {
+        separatedGoMoves.push([tableCoordinates]);
+      }
+
+      if (stoneColor === "W") {
+        separatedGoMoves[LATEST_MOVE_PAIR].push(tableCoordinates);
+      }
+    });
+      const movePairs = separatedGoMoves.map(([blackMove, whiteMove]) => {
+      const blankMove = { number: undefined, coordinates: "---" };
+      if (blackMove === undefined) {
+        return [blankMove, whiteMove];
+      }
+
+      if (whiteMove === undefined) {
+        return [blackMove, blankMove];
+      }
+
+      return [blackMove, whiteMove];
+    });
+
+    return movePairs;
   };
 ```
 
-I need to breakpoint that piece of code to understand what each value is pointing to.
+This occured because we change the addMoveToGoGame function. This changed the currentMove, so I should look at how that coudl effect the control. I should look at the function wider before deciding how I want to tackle the issue.
 
-- If I know that, then I can start to think about what the problem might be.
+I should commit my work before conitnuing. Nothign screams out to me, so I will breakpoint to understand precisely everything that is going on in the createMovePairs function. I will do this via breakpoints
 
-Record 9x9 currentMove, goHistory and captures for black and white stones.
-Record 13x13 currentMove, goHistory and captures for black and white stones.
+State to track inside the createMovePairs function:
 
-#### 9x9
+On black's move (ran twice - seems ok):
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+- separatedGoMoves: [].
+- GoMoves: ['B', 'A9'].
+- stoneColor: 'B'.
+- LATEST_MOVE_PAIR: -1.
+- tableCoordinates: { coordinates: "A9", number: 1}.
 
-#### 13x13
+On White's move (ran twice - seems ok):
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+- separatedGoMoves: [].
+- GoMoves: ['W', 'A1'].
+- LATEST_MOVE_PAIR: -1.
+- stoneColor: 'W'.
+- tableCoordinates: { coordinates: "A1", number: 1 }.
 
-- currentMove: 0.
-- goHistory: [(13x13-board)].
-- Black stone captures: unknown.
-- White stone captures: unknown.
+separatedGoMoves[LATEST_MOVE_PAIR] --> [][-1] --> undefined.
+.push property does not exist, can't be read from udnefined, error is caused.
 
-In this case, it did work, what was that all about.
-If I can't get the output in that context, I will use console.log logs with a counter.
+Look at the goMoves, that is where the probelms to seems to arraise --> there should an array of [blackMove, whiteMove].
+not [whiteMove].
 
-This way I can know how many times the re-render occurred and what point the original error occured.
-I am choosign this over the debug, due to the re-renders. It should give me a snapshot of what is happening.
-Therefore, giving me the necessary data to work out the problem.
+goMoves = goGame.moves.
+The issue must be from the goGame mvoes beign handled incorrectly. In addition, it is very likely the issue has to do with the currentMove, since once that changed, this error occured.
 
-#### Reproduction steps
+From dedication, should be from addGoMoveToGame function:
 
-- clear all data from the app (go Game files).
-- first add a 9x9 go game file to the app.
-- press the last item on the move table.
-- second, add a 13x13 go game file to the app.
+```javascript=
+  const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
+    const ARRAY_ADJUST = 1;
+    const byOnlyPastMoves = (move: GoMove, index: number) => {
+      return index < currentMove;
+    };
+    const byUpToCurrentBoardPosition = (board: Board, index: number) => {
+      return index <= currentMove;
+    };
 
-#### 9x9
+    const pastGoMoves = goGame.moves.filter(byOnlyPastMoves);
+    const updatedMoves = [...pastGoMoves, nextGoMove];
+    const updatedGoGame = { ...goGame, moves: updatedMoves };
 
-- currentMove: 0.
-- goHistory: [(9x9-board)].
-- Black stone captures: 0.
-- White stone captures: 0.
+    const pastGoHistory = goHistory.filter(byUpToCurrentBoardPosition);
+    const updatedGoHistory = [...pastGoHistory, nextBoardPosition];
 
-#### 9x9 after click on 42 last move
+    setGoGame(updatedGoGame);
+    setGoHistory(updatedGoHistory);
+    setCurrentMove(updatedMoves.length - ARRAY_ADJUST);
 
-- currentMove: 41.
-- goHistory: [(9x9-board) * 42] .
-- Black stone captures: 2.
-- White stone captures: 0.
-
-#### 13x13
-
-- currentMove: 41.
-- goHistory: [(13x13-board)].
-- Black stone captures: error.
-- White stone captures: .
-
-I know what the shallow cause is:
-
-- The goHistory has been updated to the 13x13 board, but currentMove has not updated from it's previous currentMove of 41.
-- This causes a discreptency between the 2, which leads to an length goHistory array being asked for the 41 item in the index.
-- That returneds udenfined, which means non of the original method around getCaptures works anymore.
-
-What is the root cause though?
-
-I know that the change in values was caused by the refactor the recent reducer.
-
-- Should console.log the values returned from that reducer.
-- I should do this since that change led to the test failing.
-- Therefore, I should check how the setup board is working and to gather more info.
-
-Logs from setupBoard refeactor (return from the reducer function --> calling 'SETUP_BOARD' action).
-
-- nextCurrentMove: 0
-- nextGoBoard: GoBoard {signMap: Array(13), height: 13, width: 13, \_players: Array(2), \_captures: Array(2), …}
-- nextGoGameToSetup: {id: '0I_get_a_bit_bored-vs.-MalmöBudapest', gameName: 'I_get_a_bit_bored vs. MalmöBudapest', initialStones: Array(0), moves: Array(111), rules: 'Japanese', …}
-- nextGoHistory: [GoBoard {signMap: Array(13), height: 13, width: 13, _players: Array(2), _captur...}]
-- nextUserPlayer: -1
-
-SInce nextCurrentMove and nextGoHistory are the values they should be:
-
-_I think the issue might be due to the ordering of the setStates_
-
-In the previous setup board function, the order of setState was like so:
-
-```
-  setGoGame(nextGoGame);
-  setCurrentMove(FIRST_MOVE);
-  setGoBoard(newGoBoard);
-  setGoHistory([newGoBoard]);
+    return updatedGoGame;
+  };
 ```
 
-However, in the current set of setStates, it is like this:
+This function is called twice sicne 2 moves are added. Since updatedMoves is has been made to be 1 less, I think I have found the issue. Hypothesis to do. I think in byOnlyPastMoves.
 
-```
-  setGoGame(nextGoGameToSetup);
-  setGoBoard(nextGoBoard);
-  setGoHistory(nextGoHistory);
-  setCurrentMove(nextCurrentMove);
-  setUserPlayer(nextUserPlayer);
-```
+## Hypothesis - byOnlyPastMoves
 
-I think since there is a discrepency between the currentMove being the past goHistory value (not being updated)
-and the goHistory beign update to date. It could be the nextGoHistory is updated, and ran in the AnalysisControls
-with the not update to date currentMove, leading to this issue.
+byOnlyPastMoves --> the issue occurs because it create a length zero array for updatedMoves on the secodn time round, which filters all moves out, so when the nextMove is added --> an array of 1 and thus you get only 1 white move, leading to the error. To clarify I will sue a trace for the first and second to maek changes clear.
 
-However, there are multiple re-renders of the Analysis Controls and currently I don't know of those updates are.
-Therefore, I need to gather that information before jumping ot any conclusions.
+Trace - 1st move added: ['B', 'A9']
 
-I noted down the above so I did not forget it, but it could be incorrect if the order of the state has the currentMove state
-rendered before the rest (for example). This will be done by putting console.log above each setState in setupBoard function.
-This means I can identifiy which part of state re-renders each log in AnalysisControls refers to.
+- goGame.moves: [].
+- currentMove: 0.
+- byOnlyPastMoves = [].filter => [].
 
-Note order of state, from AnalysisControls state logs, finding the ordering of the state rendering:
+updatedMoves = [ ...[], ['B', 'A9']] -> [['B', 'A9']].
+goGame.moves = updatedMoves ( -> [['B', 'A9']] ).
+currentMove = updatedMoves.length - 1 --> 1 - 1 --> 0.
 
-- SetState 0 {nextGoGameToSetup: {…}}
-  - AnalysisControls.tsx:38 17 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-  - AnalysisControls.tsx:38 19 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-- index.tsx:112 SetState 1 {nextGoBoard: GoBoard}
-  - AnalysisControls.tsx:38 21 {currentMove: 41, goHistory: Array(42), currrentBoard: GoBoard}
-- index.tsx:114 SetState 2 {nextGoHistory: Array(1)}
-  - AnalysisControls.tsx:38 23 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
-  - AnalysisControls.tsx:38 24 {currentMove: 41, goHistory: Array(1), currrentBoard: undefined}
+Trace - 2nd move added: ['W', 'A1']
 
-Look into how the the re-render could occur in the AnalysisControls. Checking to see if props are 2 renders and no props are 1.
+- goGame.moves: [['B', 'A9']].
+- currentMove: 0.
+- byOnlyPastMoves = [['B', 'A9']].filter => index < currentMove.
+  --> .filter((move, index) => index (0) < currentMove (0)) -->
+  0 < 0 --> false
 
-- goGame (props inisde AnalaysisControls) - 2 renders.
-- goBoard (no props inside Analysis Controls) - 1 render.
-- goHistory (props inside AnalysisControls) - 2 renders.
+since only 1 cycle:
 
-### Hypothesis
+- pastGoMoves = goGame.moves.filter(byOnlyPastMoves) = [].
 
-I hypothesis that because of the ordering of setState, goHistory cleared, but th ecurrentMove is not. THis would mean that if the current move is higher than zero, then a bug would occur, sinc eyou are calling an item which does not exist on an array, returning undefined, which would cause an error when trying call a method from undefined.
+updatedMoves = [ pastGoMoves --> ...[], ['W', 'A1']] -> [['W', 'A1']].
+goGame.moves = updatedMoves ( -> [['W', 'A1']] ).
+currentMove = updatedMoves.length - 1 --> 1 - 1 --> 0.
 
-If I am right, then rejigging ht eorder so that currentMove was second to the top should fix the error and cause all the test to pass (simialr orderign to previous setupBoard). If I am wrong, then the test will continue to fail.
+- goGame.moves = [['W', 'A1']].
 
-#### Test
+Thus this lead to the situation where createMovePairs has only 1 item inside the goMoves (['W', 'A1'] from [['W', 'A1']]). This lead to createMovePairs trying to push a whiteMOve into an array inside the separatedGoMoves which is at index -1 from the LATEST_MOVE_PAIR, since it starts at -1 for the first move before moving to zero for the second move. SInce the moves are added in pairs, the lATEST_MOVE_PAIR is always up to date.
 
-- Confirm current test passing ration: 5X 10\_/.
-- After change: 1X 14\_/ - ok, as I know what that one X is.
+Change byOnlyPastMoves from '<' to '<=' could work since it would include the zero index this time and so come second running, it will added the correct number of mvoes in the pastGoMoves array (up to the currentMove, which is good). This means that the updateGoMoves could be the correct length (2 mvoes, one black, one whtie). Once that is done, that should mean that createMovePairs will work accordiningly since, there are a balck and white move pair, in the ocrrect order, which should remove the error.
 
-- Reproduce defect - does pass or fail: PASS.
+If I am right,
+
+- it will remove the error when reproduce occurs, it will behave correctly and pass the other error up top.
+- It will also pass the cypress test 14 x1, plus Jest tests.
+
+If I am wrong that will not happen or an occur will in some form.
+
+### Test
+
+- Is issue fixed when reproduced: Yes.
+- Is other issue fixed: no, it went weird.
+
+## Defect - table & moves are incorrect on board
+
+When a player plays 3 moves --> the third move is not displayed. In addition, the 4th move is in the spot of the 3rd move.
+
+Also, you run 1 black, 1 white, 1 white, 1 black, which is weird.
+
+## Reproduce
+
+- Delete all past go board. Refresh the page.
+- Play 3 moves on the default baord - the third move is white when it should be black.
+- In addition, there is no third move on the move table.
+- If you make a fourht move, it is black when it should be white & it is on the third move when it should be the fourth move.
+
+- Confirm reproduction: Yes.
+
+## Gather - table & moves incorrect on board
+
+- No error messages, this all behaviour which is occuring because of the code written.
+
+- First, I need to check the index.tsx and read how the code is flowing, since that is where the recent change was made. In addition, I want to read the changePlayerColor code.
+- In addition, I want to look at the moveTable code once again.
+
+- This is because the issue was msot likely caused becasue of the change in goMoves, which has lead to another issue.
+- In addition, the MoveTable will provide clues on issue that originate from there.
+- Therefore, I should look in bothe move table & index.tsx to find clues.
+
+- Then I will deicde what to breakpoimt to learn more about.
+
+- if it were 2 whtie moves in a row, the white move would be lost, sicne the array from createMovePairs only expected 2 items, so renders the tabel that way e.g. [B, W, W] --> [B, W].
+
+- Therefore, if there were any issues, they should to do with the color of the stone.
+- If that is the case, then fixing the stone color could fix the table issue.
+- Since there are 2 issues, the movetable and the stone color --> I will focu son a stone color fix first, as once that is done, I can see if the MoveTable resolves itself. If not, more analysis on the MoveTable is needed.
+
+- Next steps is to analyses the currentMove ebign setup up --> this will involve looking at the setUserPlayer as well as teh adddMoveToGoGame --> as that setups up the currentMove and gogame items, which are dependencies for the changePlayerStoneColor function. Items which I will breakpoint are:
+
+- updatedGoGame.
+- currentMove.
+- userPlayer.
+- nextStoneColor.
+
+**Record information on the variables**
+
+_1st Move_
+
+- goMoves: [['B', 'A9']].
+- currentMove: 0.
+- userPlayer: 1.
+- nextStoneColor: -1.
+
+_2nd Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1']].
+- currentMove: 0.
+- userPlayer: -1.
+- nextStoneColor: -1.
+
+_3rd Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9']].
+- currentMove: 1.
+- userPlayer: -1.
+- nextStoneColor: 1.
+
+_4th Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9'], ['B', 'J1']].
+- currentMove: 2.
+- userPlayer: 1.
+- nextStoneColor: 1.
+
+_5th Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9'], ['B', 'J1'], ['B', 'E5']].
+- currentMove: 3.
+- userPlayer: 1.
+- nextStoneColor: -1.
+
+I think the issue is actually the array adjust --> I need to trace this out before hypothesis to confirm my understanding.
+
+- (in app) currentMove: 0 (0) B -> 0 (1) B -> 1 (2) W -> 2 (3) W -> 3 (4) B.
+- (without the -1) currentMove: 0 (0) B [] -> 1 (1) W [B] -> 2 (2) B [B, W] -> 3 (3) W [B, W, B] -> 4 (4) B [B, W, B, W].
+
+- properly: current move start at 0 since that is what it will be using.
+
+- 0 B [] -> 0 W [B] -> 1 W [B, W] -> 2 B [B, W, B] -> 3 W [B, W, B, W] -> 4 B [B, W, B, W, B].
+
+The first move does nto really count, so as long as the current move starts at zero, the currentMove is correct.
+
+The problem is not with the the currentMove but the changePlayerMOve --> the problem with it is that it default to black for the first move, which messes everything up. I cna make a hypothesis.
+
+## Hypothesis - change userPlayer color causing problem due to disconnected currentMove & updatedGoMoves
+
+- The problem is that updatedGoMoves is correct up to date, but currentMove lags behind. This means the wrong move is gotten when changeUserPlayer runs, thus causing black and white to be mis placed.
+
+trace:
+
+- Start: cm: 0, gm: [], up: B.
+
+Ideal
+(starts as B)
+
+- 1st move: cm: 0, gm: [], up: B ~ ucm: 0, ugm: [B] --> W (B converts to W and vice versa).
+- 2nd move: cm: 0, gm: [B], up: W ~ ucm: 1, ugm: [B, W] --> B
+- 3rd move: cm: 1, gm: [B, W], up: B ~ ucm: 2, ugm: [B, W, B] --> W
+
+Practice (for this goign to include only the depednecies used in the changeUserPlayer function, it takes the cm and ucm)
+(starts as B)
+
+- 1st move: cm: 0, ucm: [B], up: B --> W (correct).
+- 2nd move: cm: 0, ucm: [B, W], up: W --> W (since the ucm[cm] = B and that converts to W).
+- 3rd move: cm: 1, ucm: [B, W, W], up: W --> B (sicne white move is picked up, converts to B).
+- 4th move: cm: 2, ucm: [B, W, W, B], up: B --> B (since ucm[cm] = W, converts to B).
+
+etc, etc.
+
+Therefore, if you return both the updatedCurrentMove and updatedGoMoves, and plug them, it should be like the ideal, rather than the in practice.
+
+If I am right, then reproduce will produce no errors, Jest will pass & Cypress will go 14 X1 (on the final test).
+If I am wrong, they will not/somethign else will go wrong.
+
+## Test
+
+- does it reproduce correctly: Yes.
+- Jest test: 2 / 2 pass.
+- Cypress: 14 X 1.

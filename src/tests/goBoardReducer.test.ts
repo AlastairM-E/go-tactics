@@ -22,10 +22,12 @@ import goBoardReducer from "../pages/goBoardReducer";
 /*
   # Go Board Reducer- methods to implement.
   * setupGoBoard. v/^
-  * playBoardPosition.
   * addMoveToGoGame.
+      - playBoardPosition.
+      - changePlayerStoneColor.
   * playUpTo.
-  * changePlayerStoneColor.
+    - playBoardPosition.
+    - changePlayerStoneColor.
 */
 
 const FIRST_MOVE = 0;
@@ -38,7 +40,7 @@ let initialState: goBoardState = {
   goBoard: newGoBoard,
   currentMove: FIRST_MOVE,
   goGame: newGoGame,
-  goHistory: [newGoBoard],
+  goHistory: [],
   userPlayer: BLACK_STONE,
 };
 
@@ -52,7 +54,7 @@ const turnGoMoveToBoardMove = (
   return [moveColor, moveVertex];
 };
 
-test("goBoardReducer works", () => {
+test("goBoardReducer can setup a Go Board from a Go Game", () => {
   const BOARD_SIZE = 13;
   const nextGoGame: GoGameInterface = {
     id: "randomGame",
@@ -69,7 +71,6 @@ test("goBoardReducer works", () => {
     boardYSize: BOARD_SIZE,
   };
   const initGoBoard = new GoBoard(createGoBoard(BOARD_SIZE));
-
   const [nextPlayer, nextGoMove] = turnGoMoveToBoardMove(
     nextGoGame.moves[FIRST_MOVE],
     initGoBoard
@@ -91,6 +92,36 @@ test("goBoardReducer works", () => {
   expect(currentMove).toStrictEqual(FIRST_MOVE);
   expect(goHistory).toStrictEqual([nextBoardPosition]);
   expect(userPlayer).toStrictEqual(WHITE_STONE);
+});
+
+test("goBoardReducer can add a GoMove to the goBoard & co from a GoMove given", () => {
+  const addedMove: GoMove = ["W", "A4"];
+  const nextGoGame: GoGameInterface = {
+    ...newGoGame,
+    moves: [addedMove],
+  };
+  const LATEST_MOVE = nextGoGame.moves.length - 1;
+  const initGoBoard = new GoBoard(createGoBoard(newGoGame.boardXSize));
+
+  const nextGoHistory = nextGoGame.moves.map((move) => {
+    const [currentPlayer, currentMove] = turnGoMoveToBoardMove(
+      move,
+      initGoBoard
+    );
+    return initGoBoard.makeMove(currentPlayer, currentMove, moveOptions);
+  });
+
+  const { goGame, goBoard, currentMove, goHistory, userPlayer } =
+    goBoardReducer(initialState, {
+      type: "ADD_GO_MOVE",
+      payload: addedMove,
+    });
+
+  expect(goGame).toStrictEqual(nextGoGame);
+  expect(goBoard).toStrictEqual(nextGoHistory[LATEST_MOVE]);
+  expect(currentMove).toStrictEqual(LATEST_MOVE);
+  expect(goHistory).toStrictEqual(nextGoHistory);
+  expect(userPlayer).toStrictEqual(BLACK_STONE);
 });
 
 export {};

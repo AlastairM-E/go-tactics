@@ -40,13 +40,6 @@ function AnalysisControls({
 
   /* GO BOARD REDUCER - playUpTo */
   const playUpTo = (moveNumber: number) => {
-    console.log(0, {
-      moveNumber,
-      goHistory,
-      goHistoryMoveNumber: goHistory[moveNumber],
-      currentMove,
-    });
-
     if (moveNumber > goMoves.length) return undefined;
     if (goHistory[moveNumber]) {
       playBoardPosition(goHistory[moveNumber]);

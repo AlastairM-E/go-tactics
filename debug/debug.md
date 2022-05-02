@@ -221,7 +221,8 @@ I should read the code from there and try to figure out what more information I 
 Issue was triggered from this function
 
 ```javascript=
-const separatedGoMoves: TableMove[][] = [];
+const createMovePairs = () => {
+    const separatedGoMoves: TableMove[][] = [];
 
     goMoves.forEach(([stoneColor, coordinates], index) => {
       const DECREMENT_TO_GET_MOVE_INTO_PAIR = 1;
@@ -242,8 +243,254 @@ const separatedGoMoves: TableMove[][] = [];
         separatedGoMoves[LATEST_MOVE_PAIR].push(tableCoordinates);
       }
     });
+      const movePairs = separatedGoMoves.map(([blackMove, whiteMove]) => {
+      const blankMove = { number: undefined, coordinates: "---" };
+      if (blackMove === undefined) {
+        return [blankMove, whiteMove];
+      }
+
+      if (whiteMove === undefined) {
+        return [blackMove, blankMove];
+      }
+
+      return [blackMove, whiteMove];
+    });
+
+    return movePairs;
+  };
 ```
 
 This occured because we change the addMoveToGoGame function. This changed the currentMove, so I should look at how that coudl effect the control. I should look at the function wider before deciding how I want to tackle the issue.
 
-I should commit my work before conitnuing.
+I should commit my work before conitnuing. Nothign screams out to me, so I will breakpoint to understand precisely everything that is going on in the createMovePairs function. I will do this via breakpoints
+
+State to track inside the createMovePairs function:
+
+On black's move (ran twice - seems ok):
+
+- separatedGoMoves: [].
+- GoMoves: ['B', 'A9'].
+- stoneColor: 'B'.
+- LATEST_MOVE_PAIR: -1.
+- tableCoordinates: { coordinates: "A9", number: 1}.
+
+On White's move (ran twice - seems ok):
+
+- separatedGoMoves: [].
+- GoMoves: ['W', 'A1'].
+- LATEST_MOVE_PAIR: -1.
+- stoneColor: 'W'.
+- tableCoordinates: { coordinates: "A1", number: 1 }.
+
+separatedGoMoves[LATEST_MOVE_PAIR] --> [][-1] --> undefined.
+.push property does not exist, can't be read from udnefined, error is caused.
+
+Look at the goMoves, that is where the probelms to seems to arraise --> there should an array of [blackMove, whiteMove].
+not [whiteMove].
+
+goMoves = goGame.moves.
+The issue must be from the goGame mvoes beign handled incorrectly. In addition, it is very likely the issue has to do with the currentMove, since once that changed, this error occured.
+
+From dedication, should be from addGoMoveToGame function:
+
+```javascript=
+  const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
+    const ARRAY_ADJUST = 1;
+    const byOnlyPastMoves = (move: GoMove, index: number) => {
+      return index < currentMove;
+    };
+    const byUpToCurrentBoardPosition = (board: Board, index: number) => {
+      return index <= currentMove;
+    };
+
+    const pastGoMoves = goGame.moves.filter(byOnlyPastMoves);
+    const updatedMoves = [...pastGoMoves, nextGoMove];
+    const updatedGoGame = { ...goGame, moves: updatedMoves };
+
+    const pastGoHistory = goHistory.filter(byUpToCurrentBoardPosition);
+    const updatedGoHistory = [...pastGoHistory, nextBoardPosition];
+
+    setGoGame(updatedGoGame);
+    setGoHistory(updatedGoHistory);
+    setCurrentMove(updatedMoves.length - ARRAY_ADJUST);
+
+    return updatedGoGame;
+  };
+```
+
+This function is called twice sicne 2 moves are added. Since updatedMoves is has been made to be 1 less, I think I have found the issue. Hypothesis to do. I think in byOnlyPastMoves.
+
+## Hypothesis - byOnlyPastMoves
+
+byOnlyPastMoves --> the issue occurs because it create a length zero array for updatedMoves on the secodn time round, which filters all moves out, so when the nextMove is added --> an array of 1 and thus you get only 1 white move, leading to the error. To clarify I will sue a trace for the first and second to maek changes clear.
+
+Trace - 1st move added: ['B', 'A9']
+
+- goGame.moves: [].
+- currentMove: 0.
+- byOnlyPastMoves = [].filter => [].
+
+updatedMoves = [ ...[], ['B', 'A9']] -> [['B', 'A9']].
+goGame.moves = updatedMoves ( -> [['B', 'A9']] ).
+currentMove = updatedMoves.length - 1 --> 1 - 1 --> 0.
+
+Trace - 2nd move added: ['W', 'A1']
+
+- goGame.moves: [['B', 'A9']].
+- currentMove: 0.
+- byOnlyPastMoves = [['B', 'A9']].filter => index < currentMove.
+  --> .filter((move, index) => index (0) < currentMove (0)) -->
+  0 < 0 --> false
+
+since only 1 cycle:
+
+- pastGoMoves = goGame.moves.filter(byOnlyPastMoves) = [].
+
+updatedMoves = [ pastGoMoves --> ...[], ['W', 'A1']] -> [['W', 'A1']].
+goGame.moves = updatedMoves ( -> [['W', 'A1']] ).
+currentMove = updatedMoves.length - 1 --> 1 - 1 --> 0.
+
+- goGame.moves = [['W', 'A1']].
+
+Thus this lead to the situation where createMovePairs has only 1 item inside the goMoves (['W', 'A1'] from [['W', 'A1']]). This lead to createMovePairs trying to push a whiteMOve into an array inside the separatedGoMoves which is at index -1 from the LATEST_MOVE_PAIR, since it starts at -1 for the first move before moving to zero for the second move. SInce the moves are added in pairs, the lATEST_MOVE_PAIR is always up to date.
+
+Change byOnlyPastMoves from '<' to '<=' could work since it would include the zero index this time and so come second running, it will added the correct number of mvoes in the pastGoMoves array (up to the currentMove, which is good). This means that the updateGoMoves could be the correct length (2 mvoes, one black, one whtie). Once that is done, that should mean that createMovePairs will work accordiningly since, there are a balck and white move pair, in the ocrrect order, which should remove the error.
+
+If I am right,
+
+- it will remove the error when reproduce occurs, it will behave correctly and pass the other error up top.
+- It will also pass the cypress test 14 x1, plus Jest tests.
+
+If I am wrong that will not happen or an occur will in some form.
+
+### Test
+
+- Is issue fixed when reproduced: Yes.
+- Is other issue fixed: no, it went weird.
+
+## Defect - table & moves are incorrect on board
+
+When a player plays 3 moves --> the third move is not displayed. In addition, the 4th move is in the spot of the 3rd move.
+
+Also, you run 1 black, 1 white, 1 white, 1 black, which is weird.
+
+## Reproduce
+
+- Delete all past go board. Refresh the page.
+- Play 3 moves on the default baord - the third move is white when it should be black.
+- In addition, there is no third move on the move table.
+- If you make a fourht move, it is black when it should be white & it is on the third move when it should be the fourth move.
+
+- Confirm reproduction: Yes.
+
+## Gather - table & moves incorrect on board
+
+- No error messages, this all behaviour which is occuring because of the code written.
+
+- First, I need to check the index.tsx and read how the code is flowing, since that is where the recent change was made. In addition, I want to read the changePlayerColor code.
+- In addition, I want to look at the moveTable code once again.
+
+- This is because the issue was msot likely caused becasue of the change in goMoves, which has lead to another issue.
+- In addition, the MoveTable will provide clues on issue that originate from there.
+- Therefore, I should look in bothe move table & index.tsx to find clues.
+
+- Then I will deicde what to breakpoimt to learn more about.
+
+- if it were 2 whtie moves in a row, the white move would be lost, sicne the array from createMovePairs only expected 2 items, so renders the tabel that way e.g. [B, W, W] --> [B, W].
+
+- Therefore, if there were any issues, they should to do with the color of the stone.
+- If that is the case, then fixing the stone color could fix the table issue.
+- Since there are 2 issues, the movetable and the stone color --> I will focu son a stone color fix first, as once that is done, I can see if the MoveTable resolves itself. If not, more analysis on the MoveTable is needed.
+
+- Next steps is to analyses the currentMove ebign setup up --> this will involve looking at the setUserPlayer as well as teh adddMoveToGoGame --> as that setups up the currentMove and gogame items, which are dependencies for the changePlayerStoneColor function. Items which I will breakpoint are:
+
+- updatedGoGame.
+- currentMove.
+- userPlayer.
+- nextStoneColor.
+
+**Record information on the variables**
+
+_1st Move_
+
+- goMoves: [['B', 'A9']].
+- currentMove: 0.
+- userPlayer: 1.
+- nextStoneColor: -1.
+
+_2nd Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1']].
+- currentMove: 0.
+- userPlayer: -1.
+- nextStoneColor: -1.
+
+_3rd Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9']].
+- currentMove: 1.
+- userPlayer: -1.
+- nextStoneColor: 1.
+
+_4th Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9'], ['B', 'J1']].
+- currentMove: 2.
+- userPlayer: 1.
+- nextStoneColor: 1.
+
+_5th Move_
+
+- goMoves: [['B', 'A9'], ['W', 'A1'], ['W', 'J9'], ['B', 'J1'], ['B', 'E5']].
+- currentMove: 3.
+- userPlayer: 1.
+- nextStoneColor: -1.
+
+I think the issue is actually the array adjust --> I need to trace this out before hypothesis to confirm my understanding.
+
+- (in app) currentMove: 0 (0) B -> 0 (1) B -> 1 (2) W -> 2 (3) W -> 3 (4) B.
+- (without the -1) currentMove: 0 (0) B [] -> 1 (1) W [B] -> 2 (2) B [B, W] -> 3 (3) W [B, W, B] -> 4 (4) B [B, W, B, W].
+
+- properly: current move start at 0 since that is what it will be using.
+
+- 0 B [] -> 0 W [B] -> 1 W [B, W] -> 2 B [B, W, B] -> 3 W [B, W, B, W] -> 4 B [B, W, B, W, B].
+
+The first move does nto really count, so as long as the current move starts at zero, the currentMove is correct.
+
+The problem is not with the the currentMove but the changePlayerMOve --> the problem with it is that it default to black for the first move, which messes everything up. I cna make a hypothesis.
+
+## Hypothesis - change userPlayer color causing problem due to disconnected currentMove & updatedGoMoves
+
+- The problem is that updatedGoMoves is correct up to date, but currentMove lags behind. This means the wrong move is gotten when changeUserPlayer runs, thus causing black and white to be mis placed.
+
+trace:
+
+- Start: cm: 0, gm: [], up: B.
+
+Ideal
+(starts as B)
+
+- 1st move: cm: 0, gm: [], up: B ~ ucm: 0, ugm: [B] --> W (B converts to W and vice versa).
+- 2nd move: cm: 0, gm: [B], up: W ~ ucm: 1, ugm: [B, W] --> B
+- 3rd move: cm: 1, gm: [B, W], up: B ~ ucm: 2, ugm: [B, W, B] --> W
+
+Practice (for this goign to include only the depednecies used in the changeUserPlayer function, it takes the cm and ucm)
+(starts as B)
+
+- 1st move: cm: 0, ucm: [B], up: B --> W (correct).
+- 2nd move: cm: 0, ucm: [B, W], up: W --> W (since the ucm[cm] = B and that converts to W).
+- 3rd move: cm: 1, ucm: [B, W, W], up: W --> B (sicne white move is picked up, converts to B).
+- 4th move: cm: 2, ucm: [B, W, W, B], up: B --> B (since ucm[cm] = W, converts to B).
+
+etc, etc.
+
+Therefore, if you return both the updatedCurrentMove and updatedGoMoves, and plug them, it should be like the ideal, rather than the in practice.
+
+If I am right, then reproduce will produce no errors, Jest will pass & Cypress will go 14 X1 (on the final test).
+If I am wrong, they will not/somethign else will go wrong.
+
+## Test
+
+- does it reproduce correctly: Yes.
+- Jest test: 2 / 2 pass.
+- Cypress: 14 X 1.

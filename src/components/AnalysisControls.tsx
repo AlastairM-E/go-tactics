@@ -86,7 +86,11 @@ function AnalysisControls({
               {"<"}
             </Button>
             <Text
-              opacity={currentMove >= FIRST_MOVE ? VISIBLE : NOT_VISIBLE}
+              opacity={
+                currentMove >= FIRST_MOVE && goMoves.length !== 0
+                  ? VISIBLE
+                  : NOT_VISIBLE
+              }
               margin={1}
             >
               {currentMove + ADJUST_FOR_ARRAY_INDEX}/{goMoves.length}

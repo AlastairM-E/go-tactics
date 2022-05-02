@@ -56,7 +56,9 @@ const MoveCell = ({ move, currentMove, playUpTo }: MoveCellProps) => {
         _active={activeStyles}
         border={tableBorderStyle}
         style={currentMove === moveNumber ? activeStyles : undefined}
-        onClick={() => (moveNumber ? playUpTo(moveNumber) : undefined)}
+        onClick={() =>
+          moveNumber !== undefined ? playUpTo(moveNumber) : undefined
+        }
         data-testid={move.number ? `tableMove${move.number}` : undefined}
       >
         {move.coordinates}

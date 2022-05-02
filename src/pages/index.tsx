@@ -132,46 +132,46 @@ function IndexPage() {
   const clearBoard = () => setupGoBoard(newGoGame);
 
   /* GO BOARD REDUCER - addMoveToGoGame */
-  const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
-    const ARRAY_ADJUST = 1;
-    const byOnlyPastMoves = (move: GoMove, index: number) => {
-      return index <= currentMove;
-    };
-    const byUpToCurrentBoardPosition = (board: Board, index: number) => {
-      return index <= currentMove;
-    };
+  // const addMoveToGoGame = (nextGoMove: GoMove, nextBoardPosition: Board) => {
+  //   const ARRAY_ADJUST = 1;
+  //   const byOnlyPastMoves = (move: GoMove, index: number) => {
+  //     return index <= currentMove;
+  //   };
+  //   const byUpToCurrentBoardPosition = (board: Board, index: number) => {
+  //     return index <= currentMove;
+  //   };
 
-    const pastGoMoves = goGame.moves.filter(byOnlyPastMoves);
-    const updatedMoves = [...pastGoMoves, nextGoMove];
-    const updatedGoGame = { ...goGame, moves: updatedMoves };
+  //   const pastGoMoves = goGame.moves.filter(byOnlyPastMoves);
+  //   const updatedMoves = [...pastGoMoves, nextGoMove];
+  //   const updatedGoGame = { ...goGame, moves: updatedMoves };
 
-    const pastGoHistory = goHistory.filter(byUpToCurrentBoardPosition);
-    const updatedGoHistory = [...pastGoHistory, nextBoardPosition];
+  //   const pastGoHistory = goHistory.filter(byUpToCurrentBoardPosition);
+  //   const updatedGoHistory = [...pastGoHistory, nextBoardPosition];
 
-    setGoGame(updatedGoGame);
-    setGoHistory(updatedGoHistory);
-    setCurrentMove(updatedMoves.length - ARRAY_ADJUST);
+  //   setGoGame(updatedGoGame);
+  //   setGoHistory(updatedGoHistory);
+  //   setCurrentMove(updatedMoves.length - ARRAY_ADJUST);
 
-    return {
-      updatedGoGame,
-      updatedCurrentMove: updatedMoves.length - ARRAY_ADJUST,
-    };
-  };
+  //   return {
+  //     updatedGoGame,
+  //     updatedCurrentMove: updatedMoves.length - ARRAY_ADJUST,
+  //   };
+  // };
 
-  /* GO BOARD REDUCER - changePlayerStoneColor */
-  const changePlayerStoneColor = (
-    goMoves: GoMove[],
-    updatedCurrentMove: number
-  ) => {
-    if (goMoves.length === FIRST_MOVE) {
-      setUserPlayer(WHITE_STONE);
-    } else {
-      const [currentColor] = goMoves[updatedCurrentMove];
-      const nextStoneColor = currentColor === "B" ? WHITE_STONE : BLACK_STONE;
+  // /* GO BOARD REDUCER - changePlayerStoneColor */
+  // const changePlayerStoneColor = (
+  //   goMoves: GoMove[],
+  //   updatedCurrentMove: number
+  // ) => {
+  //   if (goMoves.length === FIRST_MOVE) {
+  //     setUserPlayer(WHITE_STONE);
+  //   } else {
+  //     const [currentColor] = goMoves[updatedCurrentMove];
+  //     const nextStoneColor = currentColor === "B" ? WHITE_STONE : BLACK_STONE;
 
-      setUserPlayer(nextStoneColor);
-    }
-  };
+  //     setUserPlayer(nextStoneColor);
+  //   }
+  // };
 
   /* GO BOARD REDUCER - playBoardPosition */
   const playBoardPosition = (boardPosition: Board) => {
@@ -181,21 +181,59 @@ function IndexPage() {
     audioMoveSound.play();
   };
 
+  const addGoMove = (goMove: GoMove) => {
+    const initialState = {
+      goGame,
+      goBoard,
+      goHistory,
+      currentMove,
+      userPlayer,
+    };
+
+    const {
+      goGame: nextGoGameToSetup,
+      goBoard: nextGoBoard,
+      goHistory: nextGoHistory,
+      currentMove: nextCurrentMove,
+      userPlayer: nextUserPlayer,
+    } = goBoardReducer(initialState, {
+      type: "ADD_GO_MOVE",
+      payload: goMove,
+    });
+
+    console.log("ADD_GO_MOVE", {
+      nextGoGameToSetup,
+      nextGoBoard,
+      nextGoHistory,
+      nextCurrentMove,
+      nextUserPlayer,
+    });
+
+    setGoGame(nextGoGameToSetup);
+    setCurrentMove(nextCurrentMove);
+    setGoBoard(nextGoBoard);
+    setGoHistory(nextGoHistory);
+    setUserPlayer(nextUserPlayer);
+  };
+
   const handleGoMoveClick = async (event: unknown, [x, y]: number[]) => {
     try {
       const parsedVertex: string = goBoard.stringifyVertex([x, y]);
       const colorOfStone = userPlayer === BLACK_STONE ? "B" : "W";
       const goMove: GoMove = [colorOfStone, parsedVertex];
 
-      const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove, goBoard);
-      const newGoBoard = goBoard.makeMove(moveColor, moveVertex, moveOptions);
+      // old add go move code
+      // const [moveColor, moveVertex] = turnGoMoveToBoardMove(goMove, goBoard);
+      // const newGoBoard = goBoard.makeMove(moveColor, moveVertex, moveOptions);
 
-      const { updatedGoGame, updatedCurrentMove } = addMoveToGoGame(
-        goMove,
-        newGoBoard
-      );
-      playBoardPosition(newGoBoard);
-      changePlayerStoneColor(updatedGoGame.moves, updatedCurrentMove);
+      addGoMove(goMove);
+      // old add go move code
+      // const { updatedGoGame, updatedCurrentMove } = addMoveToGoGame(
+      //   goMove,
+      //   newGoBoard
+      // );
+      // playBoardPosition(newGoBoard);
+      // changePlayerStoneColor(updatedGoGame.moves, updatedCurrentMove);
     } catch ($error: any) {
       console.log($error);
       setGameErrorMessage($error.message);

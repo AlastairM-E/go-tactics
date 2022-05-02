@@ -51,6 +51,7 @@
     "start": "node ./server/index.js",
     "build": "tsc --esModuleInterop ./server/index.ts && npm link ./lib/shudan && npm link @sabaki/shudan  && react-scripts build",
     "serve": "tsc --esModuleInterop  ./server/index.ts && node ./server/index.js",
+    "local:build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "dev": "react-scripts start",

@@ -1,4 +1,5 @@
 import { Sign } from "@sabaki/go-board";
+import GoBoard from "@sabaki/go-board";
 
 export type GoMove = ["B" | "W", string];
 

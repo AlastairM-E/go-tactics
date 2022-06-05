@@ -17,7 +17,15 @@ interface AddGoMoveInterface {
   payload: GoMove;
 }
 
-type Action = SetupBoardInterface | AddGoMoveInterface;
+interface PlayMoveFromGameInterface {
+  type: "PLAY_MOVE_FROM_GAME";
+  payload: number;
+}
+
+type Action =
+  | SetupBoardInterface
+  | AddGoMoveInterface
+  | PlayMoveFromGameInterface;
 
 const FIRST_MOVE = 0;
 const BLACK_STONE: Sign = 1;
@@ -100,6 +108,11 @@ const goBoardReducer = (state: goBoardState, action: Action): goBoardState => {
           goBoard: nextGoHistory[nextCurrentMove],
           userPlayer: changePlayerStoneColor(nextGoGame.moves, nextCurrentMove),
         };
+      })();
+
+    case "PLAY_MOVE_FROM_GAME":
+      return (() => {
+        return state;
       })();
 
     default:

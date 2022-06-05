@@ -22,7 +22,7 @@ import goBoardReducer from "../pages/goBoardReducer";
 /*
   # Go Board Reducer- methods to implement.
   * setupGoBoard. v/^
-  * addMoveToGoGame.
+  * addMoveToGoGame. v/^
       - playBoardPosition.
       - changePlayerStoneColor.
   * playUpTo.
@@ -54,7 +54,18 @@ const turnGoMoveToBoardMove = (
   return [moveColor, moveVertex];
 };
 
+beforeEach(() => {
+  initialState = {
+    goBoard: newGoBoard,
+    currentMove: FIRST_MOVE,
+    goGame: newGoGame,
+    goHistory: [],
+    userPlayer: BLACK_STONE,
+  };
+});
+
 test("goBoardReducer can setup a Go Board from a Go Game", () => {
+  // ARRANGE
   const BOARD_SIZE = 13;
   const nextGoGame: GoGameInterface = {
     id: "randomGame",
@@ -81,12 +92,14 @@ test("goBoardReducer can setup a Go Board from a Go Game", () => {
     moveOptions
   );
 
+  // ACT
   const { goGame, goBoard, currentMove, goHistory, userPlayer } =
     goBoardReducer(initialState, {
       type: "SETUP_BOARD",
       payload: nextGoGame,
     });
 
+  // ASSERT
   expect(goGame).toStrictEqual(nextGoGame);
   expect(goBoard).toStrictEqual(nextBoardPosition);
   expect(currentMove).toStrictEqual(FIRST_MOVE);
@@ -95,6 +108,7 @@ test("goBoardReducer can setup a Go Board from a Go Game", () => {
 });
 
 test("goBoardReducer can add a GoMove to the goBoard & co from a GoMove given", () => {
+  // ARRANGE
   const addedMove: GoMove = ["W", "A4"];
   const nextGoGame: GoGameInterface = {
     ...newGoGame,
@@ -111,17 +125,75 @@ test("goBoardReducer can add a GoMove to the goBoard & co from a GoMove given", 
     return initGoBoard.makeMove(currentPlayer, currentMove, moveOptions);
   });
 
+  // ACT
   const { goGame, goBoard, currentMove, goHistory, userPlayer } =
     goBoardReducer(initialState, {
       type: "ADD_GO_MOVE",
       payload: addedMove,
     });
 
+  // ASSERT
   expect(goGame).toStrictEqual(nextGoGame);
   expect(goBoard).toStrictEqual(nextGoHistory[LATEST_MOVE]);
   expect(currentMove).toStrictEqual(LATEST_MOVE);
   expect(goHistory).toStrictEqual(nextGoHistory);
   expect(userPlayer).toStrictEqual(BLACK_STONE);
+});
+
+test("goReducer and play a move from the goGame based on moveNumber", () => {
+  // ARRANGE
+  const MOVE_WANTED = 2;
+  const BOARD_SIZE = 13;
+  const currentGoGame: GoGameInterface = {
+    id: "randomGame",
+    gameName: "[Default Game]",
+    initialStones: [],
+    moves: [
+      ["B", "E4"],
+      ["W", "A2"],
+      ["B", "F5"],
+      ["W", "D4"],
+      ["B", "B2"],
+      ["W", "E5"],
+    ],
+    rules: "tromp-taylor",
+    komi: 7.5,
+    boardXSize: BOARD_SIZE,
+    boardYSize: BOARD_SIZE,
+  };
+
+  initialState = {
+    ...initialState,
+    goGame: currentGoGame,
+  };
+  const nextGoGame = currentGoGame;
+  const initGoBoard = new GoBoard(createGoBoard(currentGoGame.boardXSize));
+
+  const nextGoHistory = nextGoGame.moves.map((move) => {
+    const [currentPlayer, currentMove] = turnGoMoveToBoardMove(
+      move,
+      initGoBoard
+    );
+    return initGoBoard.makeMove(currentPlayer, currentMove, moveOptions);
+  });
+
+  // ACT
+  const { goGame, goBoard, currentMove, goHistory, userPlayer } =
+    goBoardReducer(initialState, {
+      type: "PLAY_MOVE_FROM_GAME",
+      payload: MOVE_WANTED,
+    });
+  // ASSERT
+  expect(goGame).toStrictEqual(nextGoGame);
+  expect(goBoard).toStrictEqual(nextGoHistory[MOVE_WANTED]);
+  expect(currentMove).toStrictEqual(MOVE_WANTED);
+  expect(goHistory).toStrictEqual(nextGoHistory);
+  expect(userPlayer).toStrictEqual(WHITE_STONE);
+  // expect(userPlayer).toStrictEqual(theNextColorForTheOpponent);
+  // expect(goGame).toStrictEqual(goGame);
+  // expect(goHistory).toStrictEqual(goHistoryUpToThatPoint || goHistory);
+  // expect(currentMove).toStrictEqual(moveAskedFor);
+  // expect(goBoard).toStrictEqual(boardPositionFromMoveAsked)
 });
 
 export {};
